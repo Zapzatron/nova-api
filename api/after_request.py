@@ -1,4 +1,4 @@
-from db import logs, stats, users
+from db import logs, stats, users, key_validation
 from helpers import network
 
 async def after_request(
@@ -23,6 +23,8 @@ async def after_request(
     await stats.manager.add_ip_address(ip_address)
     await stats.manager.add_path(path)
     await stats.manager.add_target(target_request['url'])
+    await key_validation.remove_rated_keys()
+    await key_validation.cache_all_keys()
 
     if is_chat:
         await stats.manager.add_model(model)

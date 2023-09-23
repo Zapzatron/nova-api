@@ -125,3 +125,7 @@ def get_proxy() -> Proxy:
         username=os.getenv('PROXY_USER'),
         password=os.getenv('PROXY_PASS')
     )
+
+if __name__ == '__main__':
+    print(get_proxy().url)
+    print(get_proxy().connector)

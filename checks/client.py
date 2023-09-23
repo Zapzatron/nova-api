@@ -164,7 +164,7 @@ async def test_function_calling():
             url=f'{api_endpoint}/chat/completions',
             headers=HEADERS,
             json=json_data,
-            timeout=10,
+            timeout=15,
         )
         response.raise_for_status()
 

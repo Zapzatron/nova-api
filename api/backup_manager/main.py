@@ -33,7 +33,7 @@ async def make_backup(output_dir: str):
             os.mkdir(f'{output_dir}/{database}')
 
         for collection in databases[database]:
-            print(f'Making backup for {database}/{collection}')
+            print(f'Initiated database backup for {database}/{collection}')
             await make_backup_for_collection(database, collection, output_dir)
 
 async def make_backup_for_collection(database, collection, output_dir):

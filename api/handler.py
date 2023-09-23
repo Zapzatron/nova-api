@@ -28,15 +28,15 @@ with open('config/config.yml', encoding='utf8') as f:
 moderation_debug_key_key = os.getenv('MODERATION_DEBUG_KEY')
 
 async def handle(incoming_request: fastapi.Request):
-    """
-    ### Transfer a streaming response 
+    """Transfer a streaming response 
     Takes the request from the incoming request to the target endpoint.
     Checks method, token amount, auth and cost along with if request is NSFW.
     """
-    path = incoming_request.url.path.replace('v1/v1', 'v1').replace('//', '/')
+
+    path = incoming_request.url.path
+    path = path.replace('/v1/v1', '/v1')
 
     ip_address = await network.get_ip(incoming_request)
-    print(f'[bold green]>{ip_address}[/bold green]')
 
     if '/models' in path:
         return fastapi.responses.JSONResponse(content=models_list)
@@ -65,11 +65,16 @@ async def handle(incoming_request: fastapi.Request):
         return await errors.error(418, 'Invalid or inactive NovaAI API key!', 'Create a new NovaOSS API key or reactivate your account.')
 
     if user.get('auth', {}).get('discord'):
-        print(f'[bold green]>Discord[/bold green] {user["auth"]["discord"]}')
+        print(f'[bold green]>{ip_address} ({user["auth"]["discord"]})[/bold green]')
 
     ban_reason = user['status']['ban_reason']
     if ban_reason:
         return await errors.error(403, f'Your NovaAI account has been banned. Reason: \'{ban_reason}\'.', 'Contact the staff for an appeal.')
+
+    # Checking for enterprise status
+    enterprise_keys = os.environ.get('NO_RATELIMIT_KEYS')
+    if '/enterprise' in path and user.get('api_key') not in enterprise_keys:
+        return await errors.error(403, 'Enterprise API is not available.', 'Contact the staff for an upgrade.')
 
     if 'account/credits' in path:
         return fastapi.responses.JSONResponse({'credits': user['credits']})

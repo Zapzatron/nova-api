@@ -194,4 +194,6 @@ async def get_finances(incoming_request: fastapi.Request):
             amount_in_usd = await get_crypto_price(currency) * amount
             transactions[table][transactions[table].index(transaction)]['amount_usd'] = amount_in_usd
 
+    transactions['timestamp'] = time.time()
+
     return transactions

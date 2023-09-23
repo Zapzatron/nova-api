@@ -11,6 +11,7 @@ from bson.objectid import ObjectId
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.util import get_remote_address
 from slowapi import Limiter, _rate_limit_exceeded_handler
 
 from helpers import network
@@ -34,11 +35,13 @@ app.include_router(core.router)
 
 limiter = Limiter(
     swallow_errors=True,
-    key_func=network.get_ratelimit_key, default_limits=[
+    key_func=get_remote_address,
+    default_limits=[
     '2/second',
     '20/minute',
     '300/hour'
 ])
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -65,5 +68,11 @@ async def root():
 
 @app.route('/v1/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 async def v1_handler(request: fastapi.Request):
+    res = await handler.handle(incoming_request=request)
+    return res
+
+@limiter.limit('100/second')
+@app.route('/enterprise/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+async def enterprise_handler(request: fastapi.Request):
     res = await handler.handle(incoming_request=request)
     return res

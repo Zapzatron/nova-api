@@ -2,9 +2,7 @@
 
 import os
 import json
-import yaml
-import dhooks
-import asyncio
+import random
 import aiohttp
 import starlette
 
@@ -17,6 +15,7 @@ import after_request
 import load_balancing
 
 from helpers import network, chat, errors
+from db import key_validation
 
 load_dotenv()
 
@@ -44,11 +43,10 @@ async def respond(
     json_response = {}
 
     headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'axios/0.21.1',
+        'Content-Type': 'application/json'
     }
 
-    for _ in range(10):
+    for i in range(20):
         # Load balancing: randomly selecting a suitable provider
         # If the request is a chat completion, then we need to load balance between chat providers
         # If the request is an organic request, then we need to load balance between organic providers
@@ -67,10 +65,7 @@ async def respond(
                     'cookies': incoming_request.cookies
                 })
         except ValueError as exc:
-            if model in ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-32k']:
-                webhook = dhooks.Webhook(os.environ['DISCORD_WEBHOOK__API_ISSUE'])
-                webhook.send(content=f'API Issue: **`{exc}`**\nhttps://i.imgflip.com/7uv122.jpg')
-                yield await errors.yield_error(500, 'Sorry, the API has no working keys anymore.', 'The admins have been messaged automatically.')
+            yield await errors.yield_error(500, f'Sorry, the API has no active API keys for {model}.', 'Please use a different model.')
             return
 
         target_request['headers'].update(target_request.get('headers', {}))
@@ -91,7 +86,7 @@ async def respond(
                     cookies=target_request.get('cookies'),
                     ssl=False,
                     timeout=aiohttp.ClientTimeout(
-                        connect=0.3,
+                        connect=0.5,
                         total=float(os.getenv('TRANSFER_TIMEOUT', '500'))
                     ),
                 ) as response:
@@ -102,6 +97,21 @@ async def respond(
 
                     if response.content_type == 'application/json':
                         data = await response.json()
+
+                        error = data.get('error')
+                        match error:
+                            case None:
+                                pass
+
+                            case _:
+                                match error.get('code'):
+                                    case "insufficient_quota":
+                                        key = target_request.get('provider_auth')
+                                        await key_validation.log_rated_key(key)
+                                        continue
+
+                                    case _:
+                                        pass
 
                         if 'method_not_supported' in str(data):
                             await errors.error(500, 'Sorry, this endpoint does not support this method.', data['error']['message'])
@@ -119,6 +129,7 @@ async def respond(
                             response.raise_for_status()
                         except Exception as exc:
                             if 'Too Many Requests' in str(exc):
+                                print('[!] too many requests')
                                 continue
 
                         async for chunk in response.content.iter_any():
@@ -134,13 +145,12 @@ async def respond(
                 print('[!] chat response is empty')
                 continue
     else:
-        yield await errors.yield_error(500, 'Sorry, the provider is not responding. We\'re possibly getting rate-limited.', 'Please try again later.')
+        print('[!] no response')
+        yield await errors.yield_error(500, 'Sorry, the provider is not responding.', 'Please try again later.')
         return
 
     if (not is_stream) and json_response:
         yield json.dumps(json_response)
-
-    print(f'[+] {path} -> {model or ""}')
 
     await after_request.after_request(
         incoming_request=incoming_request,
