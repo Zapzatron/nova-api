@@ -14,7 +14,8 @@ import provider_auth
 import after_request
 import load_balancing
 
-from helpers import network, chat, errors
+from helpers import errors
+
 from db import key_validation
 
 load_dotenv()
@@ -48,15 +49,10 @@ async def respond(
 
     for _ in range(10):
         # Load balancing: randomly selecting a suitable provider
-        # If the request is a chat completion, then we need to load balance between chat providers
-        # If the request is an organic request, then we need to load balance between organic providers
         try:
             if is_chat:
                 target_request = await load_balancing.balance_chat_request(payload)
             else:
-                
-                # In this case we are doing a organic request. "organic" means that it's not using a reverse engineered front-end, but rather ClosedAI's API directly
-                # churchless.tech is an example of an organic provider, because it redirects the request to ClosedAI.
                 target_request = await load_balancing.balance_organic_request({
                     'method': incoming_request.method,
                     'path': path,
@@ -93,6 +89,7 @@ async def respond(
                     is_stream = response.content_type == 'text/event-stream'
 
                     if response.status == 429:
+                        await key_validation.log_rated_key(target_request.get('provider_auth'))
                         continue
 
                     if response.content_type == 'application/json':
@@ -118,7 +115,6 @@ async def respond(
                             await errors.error(500, 'Sorry, this endpoint does not support this method.', data['error']['message'])
 
                         if 'invalid_api_key' in str(data) or 'account_deactivated' in str(data):
-                            print('[!] invalid api key', target_request.get('provider_auth'))
                             await provider_auth.invalidate_key(target_request.get('provider_auth'))
                             continue
 
@@ -140,13 +136,14 @@ async def respond(
 
                         async for chunk in response.content.iter_any():
                             chunk = chunk.decode('utf8').strip()
-                            print(1)
                             yield chunk + '\n\n'
 
                     break
 
             except Exception as exc:
-                print('[!] exception', exc)
+                if 'too many requests' in str(exc):
+                    await key_validation.log_rated_key(key)
+
                 continue
 
     else:

@@ -41,15 +41,13 @@ async def key_is_rated(key: str) -> bool:
 async def cached_key_is_rated(key: str) -> bool:
     path = os.path.join(os.getcwd(), 'cache', 'rate_limited_keys.json')
 
-    with open(path, 'r') as file:
+    with open(path, 'r', encoding='utf8') as file:
         keys = json.load(file)
 
     return key in keys
 
 async def remove_rated_keys() -> None:
     """Removes all keys that have been rate limited for more than a day."""
-
-    a_day = 86400
 
     client = AsyncIOMotorClient(MONGO_URI)
     collection = client['Liabilities']['rate-limited-keys']
@@ -58,7 +56,7 @@ async def remove_rated_keys() -> None:
 
     marked_for_removal = []
     for key in keys:
-        if int(time.time()) - key['timestamp_added'] > a_day:
+        if int(time.time()) - key['timestamp_added'] > 86400:
             marked_for_removal.append(key['_id'])
 
     query = {

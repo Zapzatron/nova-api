@@ -49,7 +49,7 @@ async def invalidate_key(provider_and_key: str) -> None:
     with open(f'secret/{provider}.invalid.txt', 'a', encoding='utf8') as f:
         f.write(key + '\n')
 
-    await invalidation_webhook(provider_and_key)
+    # await invalidation_webhook(provider_and_key)
 
 if __name__ == '__main__':
     asyncio.run(invalidate_key('closed>demo-...'))

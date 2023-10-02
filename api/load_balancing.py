@@ -1,6 +1,5 @@
 import random
 import asyncio
-from db.key_validation import cached_key_is_rated
 
 import providers
 
@@ -32,16 +31,6 @@ async def balance_chat_request(payload: dict) -> dict:
 
     provider = random.choice(providers_available)
     target = await provider.chat_completion(**payload)
-
-    while True:
-        key = target.get('provider_auth')
-
-        if not await cached_key_is_rated(key):
-            break
-
-        else:
-            target = await provider.chat_completion(**payload)
-
     module_name = await _get_module_name(provider)
     target['module'] = module_name
 
