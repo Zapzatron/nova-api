@@ -14,10 +14,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.util import get_remote_address
 from slowapi import Limiter, _rate_limit_exceeded_handler
 
-from helpers import network
-
-# 
-
 import core
 import handler
 

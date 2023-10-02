@@ -37,18 +37,20 @@ class Proxy:
             url = url.split('://')[1]
 
             if '@' in url:
-                username = url.split('@')[1].split(':')[0]
-                password = url.split('@')[1].split(':')[1]
+                username = url.split('@')[0].split(':')[0]
+                password = url.split('@')[0].split(':')[1]
 
-            host_or_ip = url.split(':')[0]
-            port = url.split(':')[1]
+            host_or_ip = url.split('@')[-1].split(':')[0]
+            port = int(url.split('@')[-1].split(':')[1])
 
         self.proxy_type = proxy_type
         self.host_or_ip = host_or_ip
+
         try:
             self.ip_address = socket.gethostbyname(self.host_or_ip) # get ip address from host
         except socket.gaierror:
             self.ip_address = self.host_or_ip
+
         self.host = self.host_or_ip
         self.port = port
         self.username = username
@@ -63,17 +65,6 @@ class Proxy:
 
         self.urls_httpx = {k + '://' :v for k, v in self.urls.items()}
         self.proxies = self.url
-
-        print({
-            'proxy_type': self.proxy_type,
-            'host_or_ip': self.host_or_ip,
-            'ip_address': self.ip_address,
-            'host': self.host,
-            'port': self.port,
-            'username': self.username,
-            'password': self.password,
-            'url': self.url
-        })
 
     @property
     def connector(self):
@@ -128,8 +119,6 @@ def get_proxy() -> Proxy:
     The proxy is either from the proxy list or from the environment variables.
     """
 
-    print('URL:\t' + ProxyLists().get_random.url)
-
     if USE_PROXY_LIST:
         return ProxyLists().get_random
 
@@ -143,4 +132,3 @@ def get_proxy() -> Proxy:
 
 if __name__ == '__main__':
     print(get_proxy().url)
-    print(get_proxy().connector)

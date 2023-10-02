@@ -46,7 +46,7 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for _ in range(20):
+    for _ in range(10):
         # Load balancing: randomly selecting a suitable provider
         # If the request is a chat completion, then we need to load balance between chat providers
         # If the request is an organic request, then we need to load balance between organic providers
@@ -86,7 +86,7 @@ async def respond(
                     cookies=target_request.get('cookies'),
                     ssl=False,
                     timeout=aiohttp.ClientTimeout(
-                        connect=0.3,
+                        connect=1.0,
                         total=float(os.getenv('TRANSFER_TIMEOUT', '500'))
                     ),
                 ) as response:
@@ -110,7 +110,6 @@ async def respond(
                                     case 'invalid_api_key':
                                         await key_validation.log_rated_key(key)
                                         print('[!] invalid key', key)
-                                        pass
 
                                     case _:
                                         print('[!] unknown error with key: ', key, error)
@@ -127,6 +126,7 @@ async def respond(
                             json_response = data
 
                         else:
+                            print('[!] error', data)
                             continue
 
 
@@ -140,6 +140,7 @@ async def respond(
 
                         async for chunk in response.content.iter_any():
                             chunk = chunk.decode('utf8').strip()
+                            print(1)
                             yield chunk + '\n\n'
 
                     break
@@ -148,11 +149,7 @@ async def respond(
                 print('[!] exception', exc)
                 continue
 
-            if (not json_response) and is_chat:
-                print('[!] chat response is empty')
-                continue
     else:
-        print('[!] no response')
         yield await errors.yield_error(500, 'Sorry, our API seems to have issues connecting to our provider(s).', 'This most likely isn\'t your fault. Please try again later.')
         return
 
