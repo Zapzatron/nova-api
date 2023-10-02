@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
 
+MONGO_URI = os.getenv('MONGO_URI')
 
 async def log_rated_key(key: str) -> None:
     """Logs a key that has been rate limited to the database."""
@@ -16,8 +16,8 @@ async def log_rated_key(key: str) -> None:
     client = AsyncIOMotorClient(MONGO_URI)
 
     scheme = {
-        "key": key,
-        "timestamp_added": int(time.time())
+        'key': key,
+        'timestamp_added': int(time.time())
     }
 
     collection = client['Liabilities']['rate-limited-keys']
@@ -31,7 +31,7 @@ async def key_is_rated(key: str) -> bool:
     collection = client['Liabilities']['rate-limited-keys']
 
     query = {
-        "key": key
+        'key': key
     }
 
     result = await collection.find_one(query)
@@ -39,9 +39,9 @@ async def key_is_rated(key: str) -> bool:
 
 
 async def cached_key_is_rated(key: str) -> bool:
-    path = os.path.join(os.getcwd(), "cache", "rate_limited_keys.json")
+    path = os.path.join(os.getcwd(), 'cache', 'rate_limited_keys.json')
 
-    with open(path, "r") as file:
+    with open(path, 'r') as file:
         keys = json.load(file)
 
     return key in keys
@@ -62,13 +62,12 @@ async def remove_rated_keys() -> None:
             marked_for_removal.append(key['_id'])
 
     query = {
-        "_id": {
-            "$in": marked_for_removal
+        '_id': {
+            '$in': marked_for_removal
         }
     }
 
     await collection.delete_many(query)
-
 
 async def cache_all_keys() -> None:
     """Clones all keys from the database to the cache."""
@@ -79,8 +78,8 @@ async def cache_all_keys() -> None:
     keys = await collection.find().to_list(length=None)
     keys = [key['key'] for key in keys]
 
-    path = os.path.join(os.getcwd(), "cache", "rate_limited_keys.json")
-    with open(path, "w") as file:
+    path = os.path.join(os.getcwd(), 'cache', 'rate_limited_keys.json')
+    with open(path, 'w') as file:
         json.dump(keys, file)
 
 if __name__ == "__main__":

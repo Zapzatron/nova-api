@@ -46,7 +46,7 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for i in range(20):
+    for _ in range(20):
         # Load balancing: randomly selecting a suitable provider
         # If the request is a chat completion, then we need to load balance between chat providers
         # If the request is an organic request, then we need to load balance between organic providers
@@ -86,7 +86,7 @@ async def respond(
                     cookies=target_request.get('cookies'),
                     ssl=False,
                     timeout=aiohttp.ClientTimeout(
-                        connect=0.5,
+                        connect=0.3,
                         total=float(os.getenv('TRANSFER_TIMEOUT', '500'))
                     ),
                 ) as response:
@@ -104,14 +104,16 @@ async def respond(
                                 pass
 
                             case _:
+                                key = target_request.get('provider_auth')
+
                                 match error.get('code'):
-                                    case "insufficient_quota":
-                                        key = target_request.get('provider_auth')
+                                    case 'invalid_api_key':
                                         await key_validation.log_rated_key(key)
-                                        continue
+                                        print('[!] invalid key', key)
+                                        pass
 
                                     case _:
-                                        pass
+                                        print('[!] unknown error with key: ', key, error)
 
                         if 'method_not_supported' in str(data):
                             await errors.error(500, 'Sorry, this endpoint does not support this method.', data['error']['message'])
@@ -123,6 +125,10 @@ async def respond(
 
                         if response.ok:
                             json_response = data
+
+                        else:
+                            continue
+
 
                     if is_stream:
                         try:
@@ -139,6 +145,7 @@ async def respond(
                     break
 
             except Exception as exc:
+                print('[!] exception', exc)
                 continue
 
             if (not json_response) and is_chat:
@@ -146,7 +153,7 @@ async def respond(
                 continue
     else:
         print('[!] no response')
-        yield await errors.yield_error(500, 'Sorry, the provider is not responding.', 'Please try again later.')
+        yield await errors.yield_error(500, 'Sorry, our API seems to have issues connecting to our provider(s).', 'This most likely isn\'t your fault. Please try again later.')
         return
 
     if (not is_stream) and json_response:

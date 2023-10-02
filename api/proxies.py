@@ -45,7 +45,10 @@ class Proxy:
 
         self.proxy_type = proxy_type
         self.host_or_ip = host_or_ip
-        self.ip_address = socket.gethostbyname(self.host_or_ip) # get ip address from host
+        try:
+            self.ip_address = socket.gethostbyname(self.host_or_ip) # get ip address from host
+        except socket.gaierror:
+            self.ip_address = self.host_or_ip
         self.host = self.host_or_ip
         self.port = port
         self.username = username
@@ -60,6 +63,17 @@ class Proxy:
 
         self.urls_httpx = {k + '://' :v for k, v in self.urls.items()}
         self.proxies = self.url
+
+        print({
+            'proxy_type': self.proxy_type,
+            'host_or_ip': self.host_or_ip,
+            'ip_address': self.ip_address,
+            'host': self.host,
+            'port': self.port,
+            'username': self.username,
+            'password': self.password,
+            'url': self.url
+        })
 
     @property
     def connector(self):
@@ -78,7 +92,7 @@ class Proxy:
 
         return aiohttp_socks.ProxyConnector(
             proxy_type=proxy_types[self.proxy_type],
-            host=self.ip_address,
+            host=self.host,
             port=self.port,
             rdns=False, 
             username=self.username,
@@ -89,16 +103,15 @@ class Proxy:
 
 proxies_in_files = []
 
-try:
-    for proxy_type in ['http', 'socks4', 'socks5']:
+for proxy_type in ['http', 'socks4', 'socks5']:
+    try:
         with open(f'secret/proxies/{proxy_type}.txt') as f:
             for line in f:
                 clean_line = line.split('#', 1)[0].strip()
                 if clean_line:
                     proxies_in_files.append(f'{proxy_type}://{clean_line}')
-
-except FileNotFoundError:
-    pass
+    except FileNotFoundError:
+        pass
 
 ## Manages the proxy list
 
@@ -114,7 +127,9 @@ def get_proxy() -> Proxy:
     ### Returns a Proxy object
     The proxy is either from the proxy list or from the environment variables.
     """
-    
+
+    print('URL:\t' + ProxyLists().get_random.url)
+
     if USE_PROXY_LIST:
         return ProxyLists().get_random
 

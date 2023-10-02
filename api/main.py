@@ -16,6 +16,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 
 from helpers import network
 
+# 
+
 import core
 import handler
 
@@ -37,7 +39,7 @@ limiter = Limiter(
     swallow_errors=True,
     key_func=get_remote_address,
     default_limits=[
-    '2/second',
+    '1/second',
     '20/minute',
     '300/hour'
 ])
@@ -71,8 +73,8 @@ async def v1_handler(request: fastapi.Request):
     res = await handler.handle(incoming_request=request)
     return res
 
-@limiter.limit('100/second')
-@app.route('/enterprise/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+@limiter.limit('100/minute', '1000/hour') 
+@app.route('/enterprise/v1/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
 async def enterprise_handler(request: fastapi.Request):
     res = await handler.handle(incoming_request=request)
     return res

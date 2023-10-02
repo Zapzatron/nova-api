@@ -1,7 +1,20 @@
-*.zip
+# Environments
+# !!! KEEP THESE ENTRIES AT THE TOP OF THIS FILE BECAUSE THEY CONTAIN THE MOST SENSITIVE DATA !!!
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+env.old/
+.prod.env
+# !!! KEEP THESE ENTRIES AT THE TOP OF THIS FILE BECAUSE THEY CONTAIN THE MOST SENSITIVE DATA !!!
 
+rate_limited_keys.json
 last_update.txt
 
+*.zip
 *.log.json
 /logs
 /log
@@ -142,15 +155,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -184,3 +188,4 @@ cython_debug/
 
 backups/
 cache/
+api/cache/rate_limited_keys.json
