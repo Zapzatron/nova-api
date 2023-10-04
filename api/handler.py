@@ -64,9 +64,6 @@ async def handle(incoming_request: fastapi.Request):
     if not user or not user['status']['active']:
         return await errors.error(418, 'Invalid or inactive NovaAI API key!', 'Create a new NovaOSS API key or reactivate your account.')
 
-    if user.get('auth', {}).get('discord'):
-        print(f'[bold green]>{ip_address} ({user["auth"]["discord"]})[/bold green]')
-
     ban_reason = user['status']['ban_reason']
     if ban_reason:
         return await errors.error(403, f'Your NovaAI account has been banned. Reason: \'{ban_reason}\'.', 'Contact the staff for an appeal.')

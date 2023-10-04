@@ -1,7 +1,6 @@
 import json
 import string
 import random
-import asyncio
 
 from rich import print
 

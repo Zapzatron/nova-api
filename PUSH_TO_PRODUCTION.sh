@@ -22,4 +22,4 @@ cp env/.prod.env /home/nova-prod/.env
 cd /home/nova-prod
 
 # Start screen
-screen -L -S nova-api python run prod && sleep 5
+screen -L -Logfile .z.log -S nova-api python run prod && sleep 5
