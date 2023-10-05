@@ -22,9 +22,6 @@ last_update.txt
 .log
 *.log.*
 
-providers/*
-providers/
-
 secret/*
 secret/
 /secret
