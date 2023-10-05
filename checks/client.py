@@ -26,6 +26,12 @@ MESSAGES = [
 
 api_endpoint = os.getenv('CHECKS_ENDPOINT', 'http://localhost:2332/v1')
 
+async def _response_base_check(response: httpx.Response) -> None:
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise ConnectionError(f'API returned an error: {response.json()}') from exc
+
 async def test_server():
     """Tests if the API server is running."""
 
@@ -36,7 +42,7 @@ async def test_server():
                 url=f'{api_endpoint.replace("/v1", "")}',
                 timeout=3
             )
-            response.raise_for_status()
+            await _response_base_check(response)
 
         assert response.json()['ping'] == 'pong', 'The API did not return a correct response.'
     except httpx.ConnectError as exc:
@@ -63,7 +69,7 @@ async def test_chat_non_stream_gpt4() -> float:
             json=json_data,
             timeout=10,
         )
-        response.raise_for_status()
+        await _response_base_check(response)
 
     assert '1337' in response.json()['choices'][0]['message']['content'], 'The API did not return a correct response.'
     return time.perf_counter() - request_start
@@ -86,7 +92,7 @@ async def test_chat_stream_gpt3() -> float:
             json=json_data,
             timeout=10,
         )
-        response.raise_for_status()
+        await _response_base_check(response)
 
     chunks = []
     resulting_text = ''
@@ -128,7 +134,7 @@ async def test_image_generation() -> float:
             json=json_data,
             timeout=10,
         )
-        response.raise_for_status()
+        await _response_base_check(response)
 
     assert '://' in response.json()['data'][0]['url']
     return time.perf_counter() - request_start
@@ -166,7 +172,7 @@ async def test_function_calling():
             json=json_data,
             timeout=15,
         )
-        response.raise_for_status()
+        await _response_base_check(response)
 
     res = response.json()
     output = json.loads(res['choices'][0]['message']['function_call']['arguments'])
@@ -185,7 +191,7 @@ async def test_models():
             headers=HEADERS,
             timeout=3
         )
-        response.raise_for_status()
+        await _response_base_check(response)
         res = response.json()
 
     all_models = [model['id'] for model in res['data']]
@@ -208,20 +214,10 @@ async def demo():
         else:
             raise ConnectionError('API Server is not running.')
 
-        # print('[lightblue]Checking if function calling works...')
-        # print(await test_function_calling())
-
-        print('Checking non-streamed chat completions...')
-        print(await test_chat_non_stream_gpt4())
-
-        print('Checking streamed chat completions...')
-        print(await test_chat_stream_gpt3())
-
-        # print('[lightblue]Checking if  image generation works...')
-        # print(await test_image_generation())
-
-        # print('Checking the models endpoint...')
-        # print(await test_models())
+        for func in [test_chat_non_stream_gpt4, test_chat_stream_gpt3]:
+            print(f'[*] {func.__name__}')
+            result = await func()
+            print(f'[+] {func.__name__} - {result}')
 
     except Exception as exc:
         print('[red]Error: ' + str(exc))

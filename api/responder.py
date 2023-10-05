@@ -38,7 +38,6 @@ async def respond(
     is_chat = False
 
     model = None
-    is_stream = False
 
     if 'chat/completions' in path:
         is_chat = True
@@ -73,6 +72,13 @@ async def respond(
             provider_name = provider_auth.split('>')[0]
             provider_key = provider_auth.split('>')[1]
 
+        if provider_key == '--NO_KEY--':
+            yield await errors.yield_error(500,
+                'Sorry, our API seems to have issues connecting to our provider(s).',
+                'This most likely isn\'t your fault. Please try again later.'
+            )
+            return
+
         target_request['headers'].update(target_request.get('headers', {}))
 
         if target_request['method'] == 'GET' and not payload:
@@ -91,12 +97,13 @@ async def respond(
                     timeout=aiohttp.ClientTimeout(
                         connect=1.0,
                         total=float(os.getenv('TRANSFER_TIMEOUT', '500'))
-                    ),
+                    )
                 ) as response:
                     is_stream = response.content_type == 'text/event-stream'
 
                     if response.status == 429:
-                        await keymanager.rate_limit_key(provider_name, provider_key)
+                        print('[!] rate limit')
+                        # await keymanager.rate_limit_key(provider_name, provider_key)
                         continue
 
                     if response.content_type == 'application/json':
@@ -112,12 +119,14 @@ async def respond(
                                 critical_error = True
                         
                         if critical_error:
+                            print('[!] critical error')
                             continue
 
                         if response.ok:
                             server_json_response = client_json_response
 
                         else:
+                            print('[!] non-ok response', client_json_response)
                             continue
 
                     if is_stream:
@@ -136,10 +145,6 @@ async def respond(
 
             except Exception as exc:
                 print('[!] exception', exc)
-                if 'too many requests' in str(exc):
-                    #!TODO
-                    pass
-
                 continue
 
     else:

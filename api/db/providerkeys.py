@@ -12,7 +12,7 @@ class KeyManager:
         self.conn = AsyncIOMotorClient(os.environ['MONGO_URI'])
 
     async def _get_collection(self, collection_name: str):
-        return self.conn[os.getenv('MONGO_NAME', 'nova-test')][collection_name]
+        return self.conn['nova-core'][collection_name]
 
     async def add_key(self, provider: str, key: str, source: str='?'):
         db = await self._get_collection('providerkeys')
@@ -36,7 +36,7 @@ class KeyManager:
         })
 
         if key is None:
-            return ValueError('No keys available for this provider!')
+            return '--NO_KEY--'
 
         return key['key']
 
@@ -87,4 +87,4 @@ class KeyManager:
 manager = KeyManager()
 
 if __name__ == '__main__':
-    asyncio.run(manager.delete_empty_keys())
+    asyncio.run(manager.import_all())

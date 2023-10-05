@@ -35,9 +35,9 @@ limiter = Limiter(
     swallow_errors=True,
     key_func=get_remote_address,
     default_limits=[
-    '1/second',
-    '20/minute',
-    '300/hour'
+    '2/second',
+    '30/minute',
+    '400/hour'
 ])
 
 app.state.limiter = limiter
