@@ -14,7 +14,7 @@ except ImportError:
 
 load_dotenv()
 
-with open(helpers.root + '/api/config/config.yml', encoding='utf8') as f:
+with open(os.path.join(helpers.root, 'api', 'config', 'config.yml'), encoding='utf8') as f:
     credits_config = yaml.safe_load(f)
 
 ## MONGODB Setup
