@@ -25,6 +25,7 @@ MESSAGES = [
 ]
 
 api_endpoint = os.getenv('CHECKS_ENDPOINT', 'http://localhost:2332/v1')
+# api_endpoint = 'http://localhost:2333/v1'
 
 async def _response_base_check(response: httpx.Response) -> None:
     try:

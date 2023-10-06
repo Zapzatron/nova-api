@@ -69,8 +69,8 @@ async def handle(incoming_request: fastapi.Request):
         return await errors.error(403, f'Your NovaAI account has been banned. Reason: \'{ban_reason}\'.', 'Contact the staff for an appeal.')
 
     # Checking for enterprise status
-    enterprise_keys = os.environ.get('NO_RATELIMIT_KEYS')
-    if '/enterprise' in path and user.get('api_key') not in enterprise_keys:
+    enterprise_keys = os.environ.get('ENTERPRISE_KEYS')
+    if path.startswith('/enterprise/v1') and user.get('api_key') not in enterprise_keys.split():
         return await errors.error(403, 'Enterprise API is not available.', 'Contact the staff for an upgrade.')
 
     if 'account/credits' in path:

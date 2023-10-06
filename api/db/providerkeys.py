@@ -1,11 +1,16 @@
 import os
 import time
+import random
 import asyncio
 
+from aiocache import cached
 from dotenv import load_dotenv
+from cachetools import TTLCache
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
+
+cache = TTLCache(maxsize=100, ttl=10)
 
 class KeyManager:
     def __init__(self):
@@ -24,27 +29,34 @@ class KeyManager:
             'source': source,
         })
 
-    async def get_key(self, provider: str):
+    async def get_possible_keys(self, provider: str):
         db = await self._get_collection('providerkeys')
-        key = await db.find_one({
+        keys = await db.find({
             'provider': provider,
             'inactive_reason': None,
             '$or': [
-                {'rate_limited_since': None},
-                {'rate_limited_since': {'$lte': time.time() - 86400}}
+                {'rate_limited_until': None},
+                {'rate_limited_until': {'$lte': time.time()}}
             ]
-        })
+        }).to_list(length=None)
 
-        if key is None:
+        return keys
+
+    async def get_key(self, provider: str):
+        keys = await self.get_possible_keys(provider)
+
+        if not keys:
             return '--NO_KEY--'
 
-        return key['key']
+        key = random.choice(keys)
+        api_key = key['key']
+        return api_key
 
-    async def rate_limit_key(self, provider: str, key: str):
+    async def rate_limit_key(self, provider: str, key: str, duration: int):
         db = await self._get_collection('providerkeys')
         await db.update_one({'provider': provider, 'key': key}, {
             '$set': {
-                'rate_limited_since': time.time()
+                'rate_limited_until': time.time() + duration
             }
         })
 
@@ -70,8 +82,6 @@ class KeyManager:
                         await db.insert_one({
                             'provider': filename.split('.')[0],
                             'key': line.strip(),
-                            'rate_limited_since': None,
-                            'inactive_reason': None,
                             'source': 'import'
                         })
                         num += 1
@@ -86,5 +96,9 @@ class KeyManager:
 
 manager = KeyManager()
 
+async def main():
+    keys = await manager.get_possible_keys('closed')
+    print(len(keys))
+
 if __name__ == '__main__':
-    asyncio.run(manager.import_all())
+    asyncio.run(main())

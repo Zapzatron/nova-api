@@ -1,4 +1,7 @@
-from db import providerkeys
+try:
+    from db import providerkeys
+except ModuleNotFoundError:
+    from ...db import providerkeys
 
 GPT_3 = [
     'gpt-3.5-turbo',

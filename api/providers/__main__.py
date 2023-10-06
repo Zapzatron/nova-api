@@ -1,5 +1,8 @@
 import os
 import sys
+import aiohttp
+import asyncio
+import importlib
 
 from rich import print
 
@@ -12,41 +15,43 @@ def remove_duplicate_keys(file):
     with open(file, 'w', encoding='utf8') as f:
         f.writelines(unique_lines)
 
-try:
-    provider_name = sys.argv[1]
+async def main():
+    try:
+        provider_name = sys.argv[1]
 
-    if provider_name == '--clear':
-        for file in os.listdir('secret/'):
-            if file.endswith('.txt'):
-                remove_duplicate_keys(f'secret/{file}')
+    except IndexError:
+        print('List of available providers:')
 
-        exit()
+        for file_name in os.listdir(os.path.dirname(__file__)):
+            if file_name.endswith('.py') and not file_name.startswith('_'):
+                print(file_name.split('.')[0])
 
-except IndexError:
-    print('List of available providers:')
+        sys.exit(0)
 
-    for file_name in os.listdir(os.path.dirname(__file__)):
-        if file_name.endswith('.py') and not file_name.startswith('_'):
-            print(file_name.split('.')[0])
+    try:
+        provider = importlib.import_module(f'.{provider_name}', 'providers')
+    except ModuleNotFoundError as exc:
+        print(exc)
+        sys.exit(1)
 
-    sys.exit(0)
+    if len(sys.argv) > 2:
+        model = sys.argv[2] # choose a specific model
+    else:
+        model = provider.MODELS[-1] # choose best model
 
-try:
-    provider = __import__(provider_name)
-except ModuleNotFoundError as exc:
-    print(f'Provider "{provider_name}" not found.')
-    print('Available providers:')
-    for file_name in os.listdir(os.path.dirname(__file__)):
-        if file_name.endswith('.py') and not file_name.startswith('_'):
-            print(file_name.split('.')[0])
-    sys.exit(1)
+    print(f'{provider_name} @ {model}')
+    req = await provider.chat_completion(model=model, messages=[{'role': 'user', 'content': '1+1='}])
+    print(req)
 
-if len(sys.argv) > 2:
-    model = sys.argv[2]
-else:
-    model = provider.MODELS[-1]
+    # launch aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.request(
+            method=req['method'],
+            url=req['url'],
+            headers=req['headers'],
+            json=req['payload'],
+        ) as response:
+            res_json = await response.json()
+            print(response.status, res_json)
 
-
-print(f'{provider_name} @ {model}')
-comp = provider.chat_completion(model=model)
-print(comp)
+asyncio.run(main())

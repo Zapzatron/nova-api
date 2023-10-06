@@ -49,7 +49,8 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for _ in range(20):
+    for i in range(20):
+        print(i)
         # Load balancing: randomly selecting a suitable provider
         try:
             if is_chat:
@@ -62,6 +63,7 @@ async def respond(
                     'headers': headers,
                     'cookies': incoming_request.cookies
                 })
+
         except ValueError:
             yield await errors.yield_error(500, f'Sorry, the API has no active API keys for {model}.', 'Please use a different model.')
             return
@@ -73,6 +75,7 @@ async def respond(
             provider_key = provider_auth.split('>')[1]
 
         if provider_key == '--NO_KEY--':
+            print(f'No key for {provider_name}')
             yield await errors.yield_error(500,
                 'Sorry, our API seems to have issues connecting to our provider(s).',
                 'This most likely isn\'t your fault. Please try again later.'
@@ -101,16 +104,26 @@ async def respond(
                 ) as response:
                     is_stream = response.content_type == 'text/event-stream'
 
-                    if response.status == 429:
-                        print('[!] rate limit')
-                        # await keymanager.rate_limit_key(provider_name, provider_key)
-                        continue
-
                     if response.content_type == 'application/json':
                         client_json_response = await response.json()
 
-                        if 'method_not_supported' in str(client_json_response):
-                            await errors.error(500, 'Sorry, this endpoint does not support this method.', data['error']['message'])
+                        try:
+                            error_code = client_json_response['error']['code']
+                        except KeyError:
+                            error_code = ''
+
+                        if error_code == 'method_not_supported':
+                            yield await errors.yield_error(400, 'Sorry, this endpoint does not support this method.', 'Please use a different method.')
+
+                        if error_code == 'insufficient_quota':
+                            print('[!] insufficient quota')
+                            await keymanager.rate_limit_key(provider_name, provider_key, 86400)
+                            continue
+
+                        if error_code == 'billing_not_active':
+                            print('[!] billing not active')
+                            await keymanager.deactivate_key(provider_name, provider_key, 'billing_not_active')
+                            continue
 
                         critical_error = False
                         for error in CRITICAL_API_ERRORS:
@@ -126,7 +139,6 @@ async def respond(
                             server_json_response = client_json_response
 
                         else:
-                            print('[!] non-ok response', client_json_response)
                             continue
 
                     if is_stream:
