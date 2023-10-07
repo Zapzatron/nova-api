@@ -215,7 +215,10 @@ async def demo():
         else:
             raise ConnectionError('API Server is not running.')
 
-        for func in [test_chat_non_stream_gpt4, test_chat_stream_gpt3]:
+        for func in [
+            # test_chat_non_stream_gpt4,
+            test_chat_stream_gpt3
+        ]:
             print(f'[*] {func.__name__}')
             result = await func()
             print(f'[+] {func.__name__} - {result}')

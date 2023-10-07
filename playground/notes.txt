@@ -1,0 +1,10 @@
+--- EXPECTED ---
+
+data: {"id":"custom-chatcmpl-nUSiapqELukaPT7vEnGcXkbvrS1fR","object":"chat.completion.chunk","created":1696716717,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"custom-chatcmpl-nUSiapqELukaPT7vEnGcXkbvrS1fR","object":"chat.completion.chunk","created":1696716717,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{"content":"123"},"finish_reason":null}]}
+
+data: {"id":"custom-chatcmpl-nUSiapqELukaPT7vEnGcXkbvrS1fR","object":"chat.completion.chunk","created":1696716717,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+

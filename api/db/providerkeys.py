@@ -98,7 +98,7 @@ manager = KeyManager()
 
 async def main():
     keys = await manager.get_possible_keys('closed')
-    print(len(keys))
+    print(keys)
 
 if __name__ == '__main__':
     asyncio.run(main())

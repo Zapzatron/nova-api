@@ -2,8 +2,6 @@ import os
 import pytz
 import asyncio
 import datetime
-import json
-import time
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -15,13 +13,6 @@ load_dotenv()
 class StatsManager:
     """
     ### The manager for all statistics tracking
-    Stats tracked:
-    - Dates
-    - IPs
-    - Target URLs
-    - Tokens
-    - Models
-    - URL Paths
     """
 
     def __init__(self):

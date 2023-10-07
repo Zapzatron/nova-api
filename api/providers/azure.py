@@ -12,7 +12,7 @@ MODELS = [
     'gpt-4',
     'gpt-4-32k'
 ]
-MODELS = [f'{model}-azure' for model in MODELS]
+# MODELS = [f'{model}-azure' for model in MODELS]
 
 AZURE_API = '2023-07-01-preview'
 

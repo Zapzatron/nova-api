@@ -1,20 +1,16 @@
 import os
 import time
+import asyncio
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from helpers import network
+try:
+    from helpers import network
+except ImportError:
+    pass
 
 load_dotenv()
-
-UA_SIMPLIFY = {
-    'Windows NT': 'W',
-    'Mozilla/5.0': 'M',
-    'Win64; x64': '64',
-    'Safari/537.36': 'S',
-    'AppleWebKit/537.36 (KHTML, like Gecko)': 'K',
-}
 
 ## MONGODB Setup
 
@@ -30,18 +26,7 @@ async def replacer(text: str, dict_: dict) -> str:
     return text
 
 async def log_api_request(user: dict, incoming_request, target_url: str):
-    """Logs the API Request into the database.
-    No input prompt is logged, however data such as IP & useragent is noted.
-    This would be useful for security reasons. Other minor data is also collected.
-
-    Args:
-        user (dict): User dict object
-        incoming_request (_type_): Request
-        target_url (str): The URL the api request was targetted to.
-
-    Returns:
-        _type_: _description_
-    """
+    """Logs the API Request into the database."""
     db = await _get_collection('logs')
     payload = {}
 
@@ -53,7 +38,6 @@ async def log_api_request(user: dict, incoming_request, target_url: str):
 
     model = payload.get('model')
     ip_address = await network.get_ip(incoming_request)
-    useragent = await replacer(incoming_request.headers.get('User-Agent', ''), UA_SIMPLIFY)
 
     new_log_item = {
         'timestamp': time.time(),
@@ -62,7 +46,6 @@ async def log_api_request(user: dict, incoming_request, target_url: str):
         'user_id': str(user['_id']),
         'security': {
             'ip': ip_address,
-            'useragent': useragent,
         },
         'details': {
             'model': model,
@@ -90,5 +73,21 @@ async def delete_by_user_id(user_id: str):
     db = await _get_collection('logs')
     return await db.delete_many({'user_id': user_id})
 
+async def get_logs_time_range(start: int, end: int):
+    db = await _get_collection('logs')
+
+    entries = []
+    async for entry in db.find({'timestamp': {'$gte': start, '$lte': end}}):
+        entries.append(entry)
+
+    return entries
+
+async def main():
+    # how many requests in last 24 hours?
+    last_24_hours = time.time() - 86400
+    logs = await get_logs_time_range(last_24_hours, time.time())
+
+    print(f'Number of logs in last 24 hours: {len(logs)}')
+
 if __name__ == '__main__':
-    pass
+    asyncio.run(main())

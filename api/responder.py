@@ -2,7 +2,7 @@
 
 import os
 import json
-import logging
+import ujson
 import aiohttp
 import asyncio
 import starlette
@@ -49,9 +49,7 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for i in range(20):
-        print(i)
-        # Load balancing: randomly selecting a suitable provider
+    for i in range(1):
         try:
             if is_chat:
                 target_request = await load_balancing.balance_chat_request(payload)
@@ -151,13 +149,21 @@ async def respond(
 
                         async for chunk in response.content.iter_any():
                             chunk = chunk.decode('utf8').strip()
+
+                            if 'azure' in provider_name:
+                                chunk = chunk.strip().replace('data: ', '')
+
+                                if not chunk or 'prompt_filter_results' in chunk:
+                                    continue
+
                             yield chunk + '\n\n'
 
                     break
 
             except Exception as exc:
                 print('[!] exception', exc)
-                continue
+                # continue
+                raise exc
 
     else:
         yield await errors.yield_error(500, 'Sorry, our API seems to have issues connecting to our provider(s).', 'This most likely isn\'t your fault. Please try again later.')

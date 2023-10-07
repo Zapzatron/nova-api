@@ -34,7 +34,4 @@ async def conversation_to_prompt(conversation: list) -> str:
     return text
 
 async def random_secret_for(name: str) -> str:
-    try:
-        return await providerkeys.manager.get_key(name)
-    except ValueError:
-        raise ValueError(f'Keys missing for "{name}" <no_keys>')
+    return await providerkeys.manager.get_key(name)
