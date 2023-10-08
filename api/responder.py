@@ -147,13 +147,15 @@ async def respond(
                                 print('[!] too many requests')
                                 continue
 
+                        chunk_no = 0
                         async for chunk in response.content.iter_any():
+                            chunk_no += 1
                             chunk = chunk.decode('utf8').strip()
 
                             if 'azure' in provider_name:
                                 chunk = chunk.strip().replace('data: ', '')
 
-                                if not chunk or 'prompt_filter_results' in chunk:
+                                if not chunk or chunk_no == 1:
                                     continue
 
                             yield chunk + '\n\n'

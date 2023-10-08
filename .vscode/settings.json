@@ -7,9 +7,9 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "**/__pycache__": true,
-        "**/*.css.map": true,
         "**/.vscode": true,
         "**/*.map": true,
+        "**/*.css.map": true,
         "tests/__pycache__": true
     },
     "hide-files.files": [

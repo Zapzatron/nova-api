@@ -6,10 +6,9 @@ costs:
   other: 5
 
   chat-models:
-    gpt-4-32k-azure: 100
+    gpt-4-32k: 200
     gpt-4: 50
-    gpt-4-azure: 10
-    gpt-3: 5
+    gpt-3: 10
 
 ## Roles Explanation
 
