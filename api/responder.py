@@ -49,7 +49,7 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for i in range(1):
+    for i in range(5):
         try:
             if is_chat:
                 target_request = await load_balancing.balance_chat_request(payload)
@@ -96,7 +96,7 @@ async def respond(
                     cookies=target_request.get('cookies'),
                     ssl=False,
                     timeout=aiohttp.ClientTimeout(
-                        connect=1.0,
+                        connect=0.75,
                         total=float(os.getenv('TRANSFER_TIMEOUT', '500'))
                     )
                 ) as response:
@@ -148,24 +148,32 @@ async def respond(
                                 continue
 
                         chunk_no = 0
-                        async for chunk in response.content.iter_any():
+                        buffer = ''
+
+                        async for chunk  in response.content.iter_chunked(1024):
                             chunk_no += 1
-                            chunk = chunk.decode('utf8').strip()
+
+                            chunk = chunk.decode('utf8')
 
                             if 'azure' in provider_name:
-                                chunk = chunk.strip().replace('data: ', '')
+                                chunk = chunk.replace('data: ', '')
 
                                 if not chunk or chunk_no == 1:
                                     continue
 
-                            yield chunk + '\n\n'
+                            subchunks = chunk.split('\n\n')
+                            buffer += subchunks[0]
+
+                            yield buffer + '\n\n'
+                            buffer = subchunks[-1]
+
+                            for subchunk in subchunks[1:-1]:
+                                yield subchunk + '\n\n'
 
                     break
 
-            except Exception as exc:
-                print('[!] exception', exc)
-                # continue
-                raise exc
+            except aiohttp.client_exceptions.ServerTimeoutError:
+                continue
 
     else:
         yield await errors.yield_error(500, 'Sorry, our API seems to have issues connecting to our provider(s).', 'This most likely isn\'t your fault. Please try again later.')

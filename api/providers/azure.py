@@ -14,7 +14,7 @@ MODELS = [
 ]
 # MODELS = [f'{model}-azure' for model in MODELS]
 
-AZURE_API = '2023-07-01-preview'
+AZURE_API = '2023-08-01-preview'
 
 async def chat_completion(**payload):
     key = await utils.random_secret_for('azure-nva1')
