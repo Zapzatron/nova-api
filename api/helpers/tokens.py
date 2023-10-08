@@ -38,10 +38,10 @@ async def count_for_messages(messages: list, model: str='gpt-3.5-turbo-0613') ->
         tokens_per_name = -1  # if there's a name, the role is omitted
 
     elif 'gpt-3.5-turbo' in model:
-        return count_for_messages(messages, model='gpt-3.5-turbo-0613')
+        return await count_for_messages(messages, model='gpt-3.5-turbo-0613')
 
     elif 'gpt-4' in model:
-        return count_for_messages(messages, model='gpt-4-0613')
+        return await count_for_messages(messages, model='gpt-4-0613')
 
     else:
         raise NotImplementedError(f"""count_for_messages() is not implemented for model {model}.
