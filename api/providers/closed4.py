@@ -2,7 +2,6 @@ from .helpers import utils
 
 AUTH = True
 ORGANIC = False
-CONTEXT = True
 STREAMING = True
 MODERATIONS = True
 ENDPOINT = 'https://api.openai.com'

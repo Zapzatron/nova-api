@@ -14,7 +14,6 @@ Runs for production on the speicified port.
 
 import os
 import sys
-import time
 
 port = sys.argv[1] if len(sys.argv) > 1 else 2332
 dev = True

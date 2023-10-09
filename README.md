@@ -167,7 +167,7 @@ You can also just add the *beginning* of an API address, like `12.123.` (without
 
 ### Core Keys
 `CORE_API_KEY` specifies the **very secret key** for  which need to access the entire user database etc.
-`TEST_NOVA_KEY` is the API key the which is used in tests. It should be one with tons of credits.
+`NOVA_KEY` is the API key the which is used in tests. It should be one with tons of credits.
 
 ### Webhooks
 `DISCORD_WEBHOOK__USER_CREATED` is the Discord webhook URL for when a user is created.

@@ -38,7 +38,10 @@ async def handle(incoming_request: fastapi.Request):
 
     ip_address = await network.get_ip(incoming_request)
 
-    if '/models' in path:
+    if '/dashboard' in path:
+        return errors.error(404, 'You can\'t access /dashboard.', 'This is a private endpoint.')
+
+    if path.startswith('/v1/models'):
         return fastapi.responses.JSONResponse(content=models_list)
 
     try:
@@ -93,7 +96,6 @@ async def handle(incoming_request: fastapi.Request):
 
     if user['credits'] < cost:
         return await errors.error(429, 'Not enough credits.', 'Wait or earn more credits. Learn more on our website or Discord server.')
-
 
     if 'DISABLE_VARS' not in key_tags:
         payload_with_vars = json.dumps(payload)

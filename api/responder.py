@@ -49,7 +49,14 @@ async def respond(
         'Content-Type': 'application/json'
     }
 
-    for i in range(5):
+    skipped_errors = {
+        'insufficient_quota': 0,
+        'billing_not_active': 0,
+        'critical_provider_error': 0,
+        'timeout': 0
+    }
+
+    for _ in range(5):
         try:
             if is_chat:
                 target_request = await load_balancing.balance_chat_request(payload)
@@ -116,11 +123,13 @@ async def respond(
                         if error_code == 'insufficient_quota':
                             print('[!] insufficient quota')
                             await keymanager.rate_limit_key(provider_name, provider_key, 86400)
+                            skipped_errors['insufficient_quota'] += 1
                             continue
 
                         if error_code == 'billing_not_active':
                             print('[!] billing not active')
                             await keymanager.deactivate_key(provider_name, provider_key, 'billing_not_active')
+                            skipped_errors['billing_not_active'] += 1
                             continue
 
                         critical_error = False
@@ -128,25 +137,16 @@ async def respond(
                             if error in str(client_json_response):
                                 await keymanager.deactivate_key(provider_name, provider_key, error)
                                 critical_error = True
-                        
+
                         if critical_error:
-                            print('[!] critical error')
+                            print('[!] critical provider error')
+                            skipped_errors['critical_provider_error'] += 1
                             continue
 
                         if response.ok:
                             server_json_response = client_json_response
 
-                        else:
-                            continue
-
                     if is_stream:
-                        try:
-                            response.raise_for_status()
-                        except Exception as exc:
-                            if 'Too Many Requests' in str(exc):
-                                print('[!] too many requests')
-                                continue
-
                         chunk_no = 0
                         buffer = ''
 
@@ -156,7 +156,7 @@ async def respond(
                             chunk = chunk.decode('utf8')
 
                             if 'azure' in provider_name:
-                                chunk = chunk.replace('data: ', '')
+                                chunk = chunk.replace('data: ', '', 1)
 
                                 if not chunk or chunk_no == 1:
                                     continue
@@ -164,19 +164,26 @@ async def respond(
                             subchunks = chunk.split('\n\n')
                             buffer += subchunks[0]
 
-                            yield buffer + '\n\n'
-                            buffer = subchunks[-1]
+                            for subchunk in [buffer] + subchunks[1:-1]:
+                                if not subchunk.startswith('data: '):
+                                    subchunk = 'data: ' + subchunk
 
-                            for subchunk in subchunks[1:-1]:
                                 yield subchunk + '\n\n'
 
+                            buffer = subchunks[-1]
                     break
 
             except aiohttp.client_exceptions.ServerTimeoutError:
+                skipped_errors['timeout'] += 1
                 continue
 
     else:
-        yield await errors.yield_error(500, 'Sorry, our API seems to have issues connecting to our provider(s).', 'This most likely isn\'t your fault. Please try again later.')
+        skipped_errors = {k: v for k, v in skipped_errors.items() if v > 0}
+        skipped_errors = ujson.dumps(skipped_errors, indent=4)
+        yield await errors.yield_error(500,
+            'Sorry, our API seems to have issues connecting to our provider(s).',
+            f'Please send this info to support: {skipped_errors}'
+        )
         return
 
     if (not is_stream) and server_json_response:

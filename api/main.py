@@ -7,10 +7,10 @@ from rich import print
 from dotenv import load_dotenv
 
 from bson.objectid import ObjectId
+from fastapi.middleware.cors import CORSMiddleware
 
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi.middleware.cors import CORSMiddleware
 from slowapi.util import get_remote_address
 from slowapi import Limiter, _rate_limit_exceeded_handler
 

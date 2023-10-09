@@ -23,15 +23,5 @@ GPT_4_32K = GPT_4 + [
     'gpt-4-32k-0613',
 ]
 
-async def conversation_to_prompt(conversation: list) -> str:
-    text = ''
-
-    for message in conversation:
-        text += f'<|{message["role"]}|>: {message["content"]}\n'
-
-    text += '<|assistant|>:'
-
-    return text
-
 async def random_secret_for(name: str) -> str:
     return await providerkeys.manager.get_key(name)

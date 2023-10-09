@@ -2,7 +2,6 @@ from .helpers import utils
 
 AUTH = True
 ORGANIC = False
-CONTEXT = True
 STREAMING = True
 MODERATIONS = False
 ENDPOINT = 'https://nova-00001.openai.azure.com'
@@ -12,7 +11,7 @@ MODELS = [
     'gpt-4',
     'gpt-4-32k'
 ]
-# MODELS = [f'{model}-azure' for model in MODELS]
+MODELS += [f'{model}-azure' for model in MODELS]
 
 AZURE_API = '2023-08-01-preview'
 

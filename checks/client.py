@@ -100,7 +100,7 @@ async def test_chat_stream_gpt3() -> float:
 
     async for chunk in response.aiter_text():
         for subchunk in chunk.split('\n\n'):
-            chunk = subchunk.replace('data: ', '').strip()
+            chunk = subchunk.replace('data: ', '', 1).strip()
 
             if chunk == '[DONE]':
                 break
