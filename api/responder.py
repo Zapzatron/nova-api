@@ -7,6 +7,7 @@ import aiohttp
 import asyncio
 import starlette
 
+from typing import Any, Coroutine, Set
 from rich import print
 from dotenv import load_dotenv
 
@@ -22,6 +23,19 @@ load_dotenv()
 CRITICAL_API_ERRORS = ['invalid_api_key', 'account_deactivated']
 
 keymanager = providerkeys.manager
+
+background_tasks: Set[asyncio.Task[Any]] = set()
+
+
+def create_background_task(coro: Coroutine[Any, Any, Any]) -> None:
+    """asyncio.create_task, which prevents the task from being garbage collected.
+
+    https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+    """
+    task = asyncio.create_task(coro)
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
+
 
 async def respond(
     path: str='/v1/chat/completions',
@@ -189,7 +203,7 @@ async def respond(
     if (not is_stream) and server_json_response:
         yield json.dumps(server_json_response)
 
-    asyncio.create_task(
+    create_background_task(
         after_request.after_request(
             incoming_request=incoming_request,
             target_request=target_request,

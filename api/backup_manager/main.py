@@ -1,6 +1,8 @@
 import os
 import json
 import asyncio
+import aiofiles
+import aiofiles.os
 
 from sys import argv
 from bson import json_util
@@ -18,8 +20,7 @@ async def main(output_dir: str):
 async def make_backup(output_dir: str):
     output_dir = os.path.join(FILE_DIR, '..', 'backups', output_dir)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    await aiofiles.os.makedirs(output_dir, exist_ok=True)
 
     client = AsyncIOMotorClient(MONGO_URI)
     databases = await client.list_database_names()
@@ -29,22 +30,22 @@ async def make_backup(output_dir: str):
         if database == 'local':
             continue
 
-        if not os.path.exists(f'{output_dir}/{database}'):
-            os.mkdir(f'{output_dir}/{database}')
+        await aiofiles.os.makedirs(os.path.join(output_dir, database), exist_ok=True)
 
         for collection in databases[database]:
             print(f'Initiated database backup for {database}/{collection}')
             await make_backup_for_collection(database, collection, output_dir)
 
 async def make_backup_for_collection(database, collection, output_dir):
-    path = f'{output_dir}/{database}/{collection}.json'
+    path = os.path.join(output_dir, database, f'{collection}.json')
 
     client = AsyncIOMotorClient(MONGO_URI)
     collection = client[database][collection]
     documents = await collection.find({}).to_list(length=None)
 
-    with open(path, 'w') as f:
-        json.dump(documents, f, default=json_util.default)
+    async with aiofiles.open(path, 'w') as f:
+        for chunk in json.JSONEncoder(default=json_util.default).iterencode(documents):
+            await f.write(chunk)
 
 if __name__ == '__main__':
     if len(argv) < 2 or len(argv) > 2:

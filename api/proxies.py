@@ -96,7 +96,7 @@ proxies_in_files = []
 
 for proxy_type in ['http', 'socks4', 'socks5']:
     try:
-        with open(f'secret/proxies/{proxy_type}.txt') as f:
+        with open(os.path.join('secret', 'proxies', f'{proxy_type}.txt')) as f:
             for line in f:
                 clean_line = line.split('#', 1)[0].strip()
                 if clean_line:

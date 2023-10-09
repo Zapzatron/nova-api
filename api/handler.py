@@ -19,10 +19,11 @@ from helpers import tokens, errors, network
 load_dotenv()
 
 users = UserManager()
-models_list = json.load(open('cache/models.json', encoding='utf8'))
+with open(os.path.join('cache', 'models.json'), encoding='utf8') as f:
+    models_list = json.load(f)
 models = [model['id'] for model in models_list['data']]
 
-with open('config/config.yml', encoding='utf8') as f:
+with open(os.path.join('config', 'config.yml'), encoding='utf8') as f:
     config = yaml.safe_load(f)
 
 moderation_debug_key_key = os.getenv('MODERATION_DEBUG_KEY')

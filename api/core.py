@@ -13,6 +13,7 @@ import json
 import hmac
 import httpx
 import fastapi
+import aiofiles
 import functools
 
 from dhooks import Webhook, Embed
@@ -148,11 +149,14 @@ async def run_checks(incoming_request: fastapi.Request):
 async def get_crypto_price(cryptocurrency: str) -> float:
     """Gets the price of a cryptocurrency using coinbase's API."""
 
-    if os.path.exists('cache/crypto_prices.json'):
-        with open('cache/crypto_prices.json', 'r') as f:
-            cache = json.load(f)
-    else:
+    cache_path = os.path.join('cache', 'crypto_prices.json')
+    try:
+        async with aiofiles.open(cache_path) as f:
+            content = await f.read()
+    except FileNotFoundError:
         cache = {}
+    else:
+        cache = json.loads(content)
 
     is_old = time.time() - cache.get('_last_updated', 0) > 60 * 60
 
@@ -164,8 +168,9 @@ async def get_crypto_price(cryptocurrency: str) -> float:
             cache[cryptocurrency] = usd_price
             cache['_last_updated'] = time.time()
 
-            with open('cache/crypto_prices.json', 'w') as f:
-                json.dump(cache, f)
+            async with aiofiles.open(cache_path, 'w') as f:
+                for chunk in json.JSONEncoder().iterencode(cache):
+                    await f.write(chunk)
 
     return cache[cryptocurrency]
 

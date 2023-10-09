@@ -3,6 +3,8 @@ import time
 import random
 import asyncio
 
+import aiofiles
+import aiofiles.os
 from aiocache import cached
 from dotenv import load_dotenv
 from cachetools import TTLCache
@@ -72,10 +74,10 @@ class KeyManager:
         db = await self._get_collection('providerkeys')
         num = 0
 
-        for filename in os.listdir('api/secret'):
+        for filename in await aiofiles.os.listdir(os.path.join('api', 'secret')):
             if filename.endswith('.txt'):
-                with open(f'api/secret/{filename}') as f:
-                    for line in f.readlines():
+                async with aiofiles.open(os.path.join('api', 'secret', filename)) as f:
+                    async for line in f:
                         if not line.strip():
                             continue
 
