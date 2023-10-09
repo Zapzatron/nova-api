@@ -51,7 +51,7 @@ async def update_roles():
 def launch():
     asyncio.run(main())
 
-    with open('rewards/last_update.txt', 'w', encoding='utf8') as f:
+    with open(os.path.join('rewards', 'last_update.txt'), 'w', encoding='utf8') as f:
         f.write(str(time.time()))
 
 if __name__ == '__main__':

@@ -3,14 +3,13 @@ import sys
 import aiohttp
 import asyncio
 import importlib
+import aiofiles.os
 
 from rich import print
 
 def remove_duplicate_keys(file):
     with open(file, 'r', encoding='utf8') as f:
-        lines = f.readlines()
-
-    unique_lines = set(lines)
+        unique_lines = set(f)
 
     with open(file, 'w', encoding='utf8') as f:
         f.writelines(unique_lines)
@@ -22,7 +21,7 @@ async def main():
     except IndexError:
         print('List of available providers:')
 
-        for file_name in os.listdir(os.path.dirname(__file__)):
+        for file_name in await aiofiles.os.listdir(os.path.dirname(__file__)):
             if file_name.endswith('.py') and not file_name.startswith('_'):
                 print(file_name.split('.')[0])
 
