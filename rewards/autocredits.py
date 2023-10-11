@@ -9,6 +9,8 @@ from api.db.users import UserManager
 manager = UserManager()
 
 async def update_credits(settings=None):
+    """Updates the credits of all users."""
+
     users = await manager.get_all_users()
 
     if not settings:

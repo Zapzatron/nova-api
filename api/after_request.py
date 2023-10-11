@@ -11,6 +11,8 @@ async def after_request(
     is_chat: bool,
     model: str,
 ) -> None:
+    """Runs after every request."""
+
     if user and incoming_request:
         await logs.log_api_request(user=user, incoming_request=incoming_request, target_url=target_request['url'])
 
@@ -20,7 +22,7 @@ async def after_request(
     ip_address = await network.get_ip(incoming_request)
 
     await stats.manager.add_date()
-    await stats.manager.add_ip_address(ip_address)
+    # await stats.manager.add_ip_address(ip_address)
     await stats.manager.add_path(path)
     await stats.manager.add_target(target_request['url'])
 

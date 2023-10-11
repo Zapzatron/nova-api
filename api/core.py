@@ -14,7 +14,6 @@ import hmac
 import httpx
 import fastapi
 import aiofiles
-import functools
 
 from dhooks import Webhook, Embed
 from dotenv import load_dotenv
@@ -163,6 +162,7 @@ async def get_crypto_price(cryptocurrency: str) -> float:
     if is_old or cryptocurrency not in cache:
         async with httpx.AsyncClient() as client:
             response = await client.get(f'https://api.coinbase.com/v2/prices/{cryptocurrency}-USD/spot')
+            response.raise_for_status()
             usd_price = float(response.json()['data']['amount'])
 
             cache[cryptocurrency] = usd_price

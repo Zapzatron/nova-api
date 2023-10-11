@@ -15,6 +15,8 @@ async def main():
     await autocredits.update_credits(roles)
 
 async def update_roles():
+    """Updates the roles of all users."""
+
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get('http://0.0.0.0:3224/get_roles') as response:

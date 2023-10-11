@@ -45,7 +45,8 @@ async def respond(
     input_tokens: int=0,
     incoming_request: starlette.requests.Request=None,
 ):
-    """Stream the completions request. Sends data in chunks
+    """
+    Stream the completions request. Sends data in chunks
     If not streaming, it sends the result in its entirety.
     """
 

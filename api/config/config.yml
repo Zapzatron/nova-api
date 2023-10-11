@@ -1,11 +1,10 @@
-max-credits: 100001
-max-credits-owner: 694201337
-start-credits: 1000
+start-credits: 1000 # Credits given to new users.
 
+# Credit cost per API request.
 costs:
-  other: 5
+  other: 5 # Other endpoints
 
-  chat-models:
+  chat-models: # chat completions
     gpt-4-32k: 200
     gpt-4: 50
     gpt-3: 10

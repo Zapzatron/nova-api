@@ -4,7 +4,6 @@ import os
 import json
 import yaml
 import time
-import orjson
 import fastapi
 
 from dotenv import load_dotenv

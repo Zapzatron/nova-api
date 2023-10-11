@@ -13,7 +13,9 @@ class FinanceManager:
     async def _get_collection(self, collection_name: str):
         return self.conn['finances'][collection_name]
 
-    async def get_entire_financial_history(self):
+    async def get_entire_financial_history(self) -> dict:
+        """Returns the entire financial history of the organization."""
+
         donations_db = await self._get_collection('donations')
         expenses_db = await self._get_collection('expenses')
 

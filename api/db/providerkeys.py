@@ -3,9 +3,6 @@ import time
 import random
 import asyncio
 
-import aiofiles
-import aiofiles.os
-from aiocache import cached
 from dotenv import load_dotenv
 from cachetools import TTLCache
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -22,6 +19,8 @@ class KeyManager:
         return self.conn['nova-core'][collection_name]
 
     async def add_key(self, provider: str, key: str, source: str='?'):
+        """Adds a key to the database."""
+
         db = await self._get_collection('providerkeys')
         await db.insert_one({
             'provider': provider,
@@ -32,6 +31,8 @@ class KeyManager:
         })
 
     async def get_possible_keys(self, provider: str):
+        """Returns a list of possible keys for a provider."""
+
         db = await self._get_collection('providerkeys')
         keys = await db.find({
             'provider': provider,
@@ -45,6 +46,8 @@ class KeyManager:
         return keys
 
     async def get_key(self, provider: str):
+        """Returns a random key for a provider."""
+
         keys = await self.get_possible_keys(provider)
 
         if not keys:
@@ -55,6 +58,8 @@ class KeyManager:
         return api_key
 
     async def rate_limit_key(self, provider: str, key: str, duration: int):
+        """Rate limits a key for a provider."""
+
         db = await self._get_collection('providerkeys')
         await db.update_one({'provider': provider, 'key': key}, {
             '$set': {
@@ -63,6 +68,8 @@ class KeyManager:
         })
 
     async def deactivate_key(self, provider: str, key: str, reason: str):
+        """Deactivates a key for a provider, and gives a reason."""
+
         db = await self._get_collection('providerkeys')
         await db.update_one({'provider': provider, 'key': key}, {
             '$set': {
@@ -71,12 +78,14 @@ class KeyManager:
         })
 
     async def import_all(self):
+        """Imports all keys from the secret/ folder."""
+
         db = await self._get_collection('providerkeys')
         num = 0
 
-        for filename in await aiofiles.os.listdir(os.path.join('api', 'secret')):
+        for filename in os.listdir(os.path.join('api', 'secret')):
             if filename.endswith('.txt'):
-                async with aiofiles.open(os.path.join('api', 'secret', filename)) as f:
+                async open(os.path.join('api', 'secret', filename)) as f:
                     async for line in f:
                         if not line.strip():
                             continue

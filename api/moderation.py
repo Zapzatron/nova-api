@@ -1,13 +1,10 @@
 """This module contains functions for checking if a message violates the moderation policy."""
 
-import time
-import difflib
 import asyncio
 import aiocache
 import profanity_check
 
 from typing import Union
-from Levenshtein import distance
 
 cache = aiocache.Cache(aiocache.SimpleMemoryCache)
 
@@ -28,8 +25,7 @@ def input_to_text(inp: Union[str, list]) -> str:
     return text
 
 async def is_policy_violated(inp: Union[str, list]) -> bool:
-    """Checks if the input violates the moderation policy.
-    """
+    """Checks if the input violates the moderation policy."""
     # use aio cache to cache the result
     inp = input_to_text(inp)
 

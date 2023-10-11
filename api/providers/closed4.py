@@ -3,7 +3,6 @@ from .helpers import utils
 AUTH = True
 ORGANIC = False
 STREAMING = True
-MODERATIONS = True
 ENDPOINT = 'https://api.openai.com'
 MODELS = utils.GPT_4
 

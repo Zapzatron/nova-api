@@ -3,7 +3,6 @@ import sys
 import aiohttp
 import asyncio
 import importlib
-import aiofiles.os
 
 from rich import print
 
@@ -21,7 +20,7 @@ async def main():
     except IndexError:
         print('List of available providers:')
 
-        for file_name in await aiofiles.os.listdir(os.path.dirname(__file__)):
+        for file_name in os.listdir(os.path.dirname(__file__)):
             if file_name.endswith('.py') and not file_name.startswith('_'):
                 print(file_name.split('.')[0])
 

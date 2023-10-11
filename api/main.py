@@ -1,9 +1,9 @@
 """FastAPI setup."""
 
+import os
 import fastapi
 import pydantic
 
-from rich import print
 from dotenv import load_dotenv
 
 from bson.objectid import ObjectId
@@ -50,11 +50,17 @@ async def startup_event():
     # https://stackoverflow.com/a/74529009
     pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 
+    folders = ['backups', 'cache', 'secret', 'secret/proxies']
+
+    for folder in folders:
+        try:
+            os.mkdir(folder)
+        except FileExistsError:
+            pass
+
 @app.get('/')
 async def root():
-    """
-    Returns general information about the API.
-    """
+    """Returns general information about the API."""
 
     return {
         'hi': 'Welcome to the Nova API!',

@@ -74,6 +74,20 @@ This one's code can be found in the following repository: [github.com/novaoss/no
 - `screen` (for production)
 - Cloudflare (for security, anti-DDoS, etc.) - we fully support Cloudflare
 
+## Staging System
+This repository has an integrated staging system. It's a simple system that allows you to test the API server before deploying it to production.
+
+You should definitely set up two databases on MongoDB: `nova-core` and `nova-test`. Please note that `nova-core` is always used for `providerkeys`.
+
+Put your production `.env` file in `env/.prod.env`. Your test `.env` file should be in `.env`.
+
+Running `PUSH_TO_PRODUCTION.sh` will:
+- kill port `2333` (production)
+- remove all contents of the production directory, set to `/home/nova-prod/` (feel free to change it)
+- then copy the test directory (generally *this* directory) to the production directory
+- copy the `.env` file from `env/.prod.env` to `.env`
+- use `screen` to run the production server on port `2333`
+
 ## Install
 Assuming you have a new version of Python 3.9+ and pip installed:
 ```py
@@ -108,14 +122,13 @@ pip install alt-profanity-check
 pip install git+https://github.com/dimitrismistriotis/alt-profanity-check.git
 ```
 
-
 ## `.env` configuration
 Create a `.env` file, make sure not to reveal any of its contents to anyone, and fill in the required values in the format `KEY=VALUE`. Otherwise, the code won't run.
 
 ### Database
 Set up a MongoDB database and set `MONGO_URI` to the MongoDB database connection URI. Quotation marks are definetly recommended here!
 
-### Proxy
+### Proxy (optional)
 - `PROXY_TYPE` (optional, defaults to `socks.PROXY_TYPE_HTTP`): the type of proxy - can be `http`, `https`, `socks4`, `socks5`, `4` or `5`, etc... 
 - `PROXY_HOST`: the proxy host (host domain or IP address), without port!
 - `PROXY_PORT` (optional)
@@ -125,7 +138,7 @@ Set up a MongoDB database and set `MONGO_URI` to the MongoDB database connection
 Want to use a proxy list? See the according section!
 Keep in mind to set `USE_PROXY_LIST` to `True`! Otherwise, the proxy list won't be used.
 
-### Proxy Lists
+### Proxy Lists (optional)
 To use proxy lists, navigate to `api/secret/proxies/` and create the following files:
 - `http.txt`
 - `socks4.txt`
@@ -176,7 +189,99 @@ You can also just add the *beginning* of an API address, like `12.123.` (without
 ### Other
 `KEYGEN_INFIX` can be almost any string (avoid spaces or special characters) - this string will be put in the middle of every NovaAI API key which is generated. This is useful for identifying the source of the key using e.g. RegEx.
 
-## Run
+## Misc
+`api/cache/models.json` has to be a valid JSON file in the OpenAI format. It is what `/v1/models` always returns. Make sure to update it regularly. 
+
+Example: https://pastebin.com/raw/WuNzTJDr (updated ~aug/2023)
+
+## Providers
+This is one of the most essential parts of NovaAI. Providers are the APIs used to access the AI models.
+The modules are located in `api/providers/` and active providers are specified in `api/providers/__init__.py`.
+
+You shouldn't use `.env` for provider keys. Instead, use the database as it's more flexible and secure. For a detailed explanation, scroll down a bit to the database section.
+
+Always return the `provider_auth` dictionary key if you a API key is required. Example:
+
+```py
+...
+    return {
+        ...
+        'provider_auth': f'exampleprovider>{key}'
+    }
+...
+```
+
+Whereas `exampleprovider` is the provider name used in the database.
+
+### Check providers
+List all providers using `python api`. This **won't** start the API server.
+
+Check if a provider is working using `python api <provider>`, e.g. `python api azure`. This **doesn't** require the API to be running.
+
+## Core Database
+
+You need to set up a MongoDB database and set `MONGO_URI` in `.env` to the MongoDB database connection URI. Use quotation marks!
+
+It's also important to set up the database `nova-core`.
+
+The following collections are used in the database and will be created automatically if they don't exist.
+
+### `users`
+Generally, the `api_key` should be treated as the primary key. However, the `discord` and `github` keys are also unique and can be used as primary keys.
+- `api_key`: API key [str]
+- `credits`: credits [int]
+- `role` (optional): credit multiplier. Check `api/config/config.yml`. [str]
+- `status`:
+  - `active`: defaults to `true`. May be used in the future so that users can deactivate their accounts.
+  - `ban_reason`: defaults to `""`. If the user is banned, this will be set to the reason.
+- `auth`:
+  - `discord`: Discord user ID. Use a string, because Discord IDs can be larger than the maximum integer value.
+  - `github`: GitHub user ID. Not used yet.
+- `level`: Discord (Arcane bot) level. [int]
+
+### `providerkeys`
+Used in `api/providers/...` to store API keys of the providers.
+
+- `provider`: provider name [str], e.g. `azure``
+- `key`: API key [str], e.g. `sk-...`
+- `rate_limited_since`: timestamp [int], defaults to `null`. The unix timestamp when the provider was rate limited. If it's `null`, the provider is not rate limited.
+- `inactive_reason`: defaults to `null`. If the key is disabled or terminated, this will be set to the reason automatically. You can also set it manually. [str]
+- `source`: just to keep track of where the key came from. [str]
+
+### `stats`
+Logs general statistics.
+Automatically updated by the API server.
+
+More info is yet to be documented.
+
+### `logs`
+Every API request is logged here.
+Automatically updated by the API server.
+
+More info is yet to be documented.
+
+## Finance Database
+The finance database is used to keep track of the finances.
+
+**Important:** *always* use the specified `currency` for the field `amount`.
+
+### `donations`
+- `currency`: (crypto) currency [str], e.g. EUR, USD, BTC, USDT-TRX, ...
+- `amount`: amount [float].
+- `user`: [str], Discord user ID
+- `proof`: [str], link to proof (e.g. transaction hash)
+- `timestamp`: [int], unix timestamp
+
+### `expenses`
+- `currency`: (crypto) currency [str], e.g. EUR, USD, BTC, USDT-ETH, ...
+- `amount`: amount [float]. NOT negative!
+- `proof`: [str], link to proof (e.g. transaction hash)
+- `type`: [str], type of expense, e.g. `wage`, `payment`, `donation`, ...
+- `to`: [str], entity the expense was paid to, e.g. `IPRoyal`, `employee/John`
+- `reason`: [str], reason for the expense
+- `timestamp`: [int], unix timestamp
+
+## Run Test Server
 > **Warning:** read the according section for production usage!
 
 For developement:
@@ -192,33 +297,19 @@ You can also specify a port, e.g.:
 ```bash
 python run 1337
 ```
-
-## Adding a provider
-To be documented!]
-
-## Run tests
+  
+## Tests
 Make sure the API server is running on the port you specified and run:
 `python checks`
 
 ## Default Ports
+It is recommended to use the default ports, because this will make it easier to set other parts of the infrastructure up.
+
 ```yml
 2332: Developement
 2333: Production
 ```
 
-## Production
+## Run Production Server
 
-Make sure your server is secure and up to date.
-Check everything.
-
-The following command will run the API  __without__ a reloader!
-
-```bash
-python run prod
-```
-
-or 
-
-```bash
-./screen.sh
-```
+Make sure you have read all the according sections and have set up everything correctly.

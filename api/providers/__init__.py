@@ -1,2 +1,2 @@
-from . import azure, webraft
-MODULES =    [azure, webraft]
+from . import azure
+MODULES =    [azure]

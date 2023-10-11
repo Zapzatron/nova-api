@@ -19,14 +19,9 @@ conn = AsyncIOMotorClient(os.environ['MONGO_URI'])
 async def _get_collection(collection_name: str):
     return conn[os.getenv('MONGO_NAME', 'nova-test')][collection_name]
 
-async def replacer(text: str, dict_: dict) -> str:
-    # This seems to exist for a very specific and dumb purpose :D
-    for k, v in dict_.items():
-        text = text.replace(k, v)
-    return text
-
 async def log_api_request(user: dict, incoming_request, target_url: str):
     """Logs the API Request into the database."""
+
     db = await _get_collection('logs')
     payload = {}
 

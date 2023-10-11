@@ -1,10 +1,10 @@
 from .helpers import utils
 
-AUTH = True
-ORGANIC = False
-STREAMING = True
-MODERATIONS = False
-ENDPOINT = 'https://nova-00001.openai.azure.com'
+AUTH = True # If the provider requires an API key
+ORGANIC = False # If all OpenAI endpoints are available on the provider. If false, only a chat completions are available.
+STREAMING = True # If the provider supports streaming completions
+ENDPOINT = 'https://nova-00001.openai.azure.com' # (Important: read below) The endpoint for the provider. 
+#! IMPORTANT: If this is an ORGANIC provider, this should be the endpoint for the API with anything BEFORE the "/v1".
 MODELS = [
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-16k',

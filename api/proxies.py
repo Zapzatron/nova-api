@@ -3,8 +3,6 @@
 import os
 import socket
 import random
-import asyncio
-import aiohttp
 import aiohttp_socks
 
 from rich import print
@@ -16,7 +14,7 @@ USE_PROXY_LIST = os.getenv('USE_PROXY_LIST', 'False').lower() == 'true'
 
 class Proxy:
     """
-    ### Represents a proxy. 
+    Represents a proxy. 
     The type can be either http, https, socks4 or socks5.
     You can also pass a url, which will be parsed into the other attributes.
     
@@ -69,7 +67,7 @@ class Proxy:
     @property
     def connector(self):
         """
-        ### Returns a proxy connector
+        Returns a proxy connector
         Returns an aiohttp_socks.ProxyConnector object. 
         This can be used in aiohttp.ClientSession.
         """
@@ -115,7 +113,7 @@ class ProxyLists:
 
 def get_proxy() -> Proxy:
     """
-    ### Returns a Proxy object
+    Returns a Proxy object
     The proxy is either from the proxy list or from the environment variables.
     """
 
