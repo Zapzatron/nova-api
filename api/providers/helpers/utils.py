@@ -23,5 +23,22 @@ GPT_4_32K = GPT_4 + [
     'gpt-4-32k-0613',
 ]
 
+AZURE_API = '2023-08-01-preview'
+
 async def random_secret_for(name: str) -> str:
     return await providerkeys.manager.get_key(name)
+
+async def azure_chat_completion(endpoint: str, provider: str, payload: dict) -> dict:
+    key = await random_secret_for(provider)
+    model = payload['model']
+    deployment = model.replace('.', '').replace('-azure', '')
+
+    return {
+        'method': 'POST',
+        'url': f'{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={AZURE_API}',
+        'payload': payload,
+        'headers': {
+            'api-key': key
+        },
+        'provider_auth': f'{provider}>{key}'
+    }

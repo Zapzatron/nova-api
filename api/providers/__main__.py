@@ -49,7 +49,10 @@ async def main():
             headers=req['headers'],
             json=req['payload'],
         ) as response:
-            res_json = await response.json()
+            try:
+                res_json = await response.json()
+            except aiohttp.ContentTypeError:
+                res_json = await response.text()
             print(response.status, res_json)
 
 asyncio.run(main())

@@ -21,7 +21,7 @@ with open(os.path.join(helpers.root, 'api', 'config', 'config.yml'), encoding='u
 
 class UserManager:
     """
-    ### Manager of all users in the database.
+    Manager of all users in the database.
     Following methods are available:
 
     - `_get_collection(collection_name)`
@@ -45,31 +45,35 @@ class UserManager:
         return collection#.find()
 
     async def create(self, discord_id: str = '') -> dict:
+        db = await self._get_collection('users')
         chars = string.ascii_letters + string.digits
 
         infix = os.getenv('KEYGEN_INFIX', 'S3LFH0ST')
         suffix = ''.join(random.choices(chars, k=20))
         prefix = ''.join(random.choices(chars, k=20))
 
-        new_api_key = f'nv-{prefix}{infix}{suffix}'
+        new_api_key = f'nv2-{prefix}{infix}{suffix}'
 
-        new_user = {
-            'api_key': new_api_key,
-            'credits': credits_config['start-credits'],
-            'role': '',
-            'level': '',
-            'status': {
-                'active': True,
-                'ban_reason': '',
-            },
-            'auth': {
-                'discord': str(discord_id),
-                'github': None
+        existing_user = await self.user_by_discord_id(discord_id)
+        if existing_user: # just change api key
+            await db.update_one({'auth.discord': str(int(discord_id))}, {'$set': {'api_key': new_api_key}})
+        else:
+            new_user = {
+                'api_key': new_api_key,
+                'credits': credits_config['start-credits'],
+                'role': '',
+                'level': '',
+                'status': {
+                    'active': True,
+                    'ban_reason': '',
+                },
+                'auth': {
+                    'discord': str(discord_id),
+                    'github': None
+                }
             }
-        }
 
-        db = await self._get_collection('users')
-        await db.insert_one(new_user)
+            await db.insert_one(new_user)
         user = await db.find_one({'api_key': new_api_key})
         return user
 

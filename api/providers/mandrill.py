@@ -1,8 +1,6 @@
 from .helpers import utils
 
-AUTH = True
 ORGANIC = False
-STREAMING = True
 MODELS = ['llama-2-7b-chat']
 
 async def chat_completion(**kwargs):

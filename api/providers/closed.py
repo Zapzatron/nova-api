@@ -1,8 +1,6 @@
 from .helpers import utils
 
-AUTH = True
 ORGANIC = True
-STREAMING = True
 ENDPOINT = 'https://api.openai.com'
 MODELS = utils.GPT_3
 

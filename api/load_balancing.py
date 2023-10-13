@@ -12,15 +12,11 @@ async def _get_module_name(module) -> str:
 async def balance_chat_request(payload: dict) -> dict:
     """
     Load balance the chat completion request between chat providers.
-    Providers are sorted by streaming and models. Target (provider.chat_completion) is returned
     """
 
     providers_available = []
 
     for provider_module in providers.MODULES:
-        if payload['stream'] and not provider_module.STREAMING:
-            continue
-
         if payload['model'] not in provider_module.MODELS:
             continue
 
@@ -52,10 +48,6 @@ async def balance_organic_request(request: dict) -> dict:
     for provider_module in providers.MODULES:
         if not provider_module.ORGANIC:
             continue
-
-        if '/moderations' in request['path']:
-            if not provider_module.MODERATIONS:
-                continue
 
         providers_available.append(provider_module)
 

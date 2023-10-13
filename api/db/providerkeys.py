@@ -85,7 +85,7 @@ class KeyManager:
 
         for filename in os.listdir(os.path.join('api', 'secret')):
             if filename.endswith('.txt'):
-                async open(os.path.join('api', 'secret', filename)) as f:
+                with open(os.path.join('api', 'secret', filename)) as f:
                     async for line in f:
                         if not line.strip():
                             continue
