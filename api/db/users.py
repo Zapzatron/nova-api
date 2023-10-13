@@ -22,16 +22,6 @@ with open(os.path.join(helpers.root, 'api', 'config', 'config.yml'), encoding='u
 class UserManager:
     """
     Manager of all users in the database.
-    Following methods are available:
-
-    - `_get_collection(collection_name)`
-    - `create(discord_id)`
-    - `user_by_id(user_id)`
-    - `user_by_discord_id(discord_id)`
-    - `user_by_api_key(api_key)`
-    - `update_by_id(user_id, new_obj)`
-    - `update_by_filter(filter_object, new_obj)`
-    - `delete(user_id)`
     """
 
     def __init__(self):
