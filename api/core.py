@@ -42,7 +42,10 @@ async def check_core_auth(request):
 async def new_user_webhook(user: dict) -> None:
     """Runs when a new user is created."""
 
-    dhook = Webhook(os.environ['DISCORD_WEBHOOK__USER_CREATED'])
+    try:
+        dhook = Webhook(os.environ['DISCORD_WEBHOOK__USER_CREATED'])
+    except KeyError:
+        return
 
     embed = Embed(
         description='New User',
