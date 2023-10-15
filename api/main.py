@@ -48,7 +48,7 @@ app.add_middleware(SlowAPIMiddleware)
 async def startup_event():
     """Runs when the API starts up."""
     # https://stackoverflow.com/a/74529009
-    pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
+    # pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 
     folders = ['backups', 'cache', 'secret', 'secret/proxies']
 

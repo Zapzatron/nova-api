@@ -68,8 +68,10 @@ This one's code can be found in the following repository: [github.com/novaoss/no
 - Python 3.9+
 - pip
 - MongoDB database
+- `uvicorn`
 
 ## Recommended
+- Setup of the other infrastructure
 - `git` (for updates)
 - `screen` (for production)
 - Cloudflare (for security, anti-DDoS, etc.) - we fully support Cloudflare
