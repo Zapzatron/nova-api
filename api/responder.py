@@ -71,7 +71,7 @@ async def respond(
         'timeout': 0
     }
 
-    for _ in range(5):
+    for _ in range(10):
         try:
             if is_chat:
                 target_request = await load_balancing.balance_chat_request(payload)
@@ -107,7 +107,12 @@ async def respond(
         if target_request['method'] == 'GET' and not payload:
             target_request['payload'] = None
 
-        async with aiohttp.ClientSession(connector=proxies.get_proxy().connector) as session:
+        connector = None
+
+        if os.getenv('PROXY_HOST') or os.getenv('USE_PROXY_LIST', 'False').lower() == 'true':
+            connector = proxies.get_proxy().connector
+
+        async with aiohttp.ClientSession(connector=connector) as session:
             try:
                 async with session.request(
                     method=target_request.get('method', 'POST'),

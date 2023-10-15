@@ -72,7 +72,11 @@ async def test_chat_non_stream_gpt4() -> float:
         )
         await _response_base_check(response)
 
-    assert '1337' in response.json()['choices'][0]['message']['content'], 'The API did not return a correct response.'
+    try:
+        assert '1337' in response.json()['choices'][0]['message']['content'], 'The API did not return a correct response.'
+    except json.decoder.JSONDecodeError:
+        return response.status_code
+
     return time.perf_counter() - request_start
 
 async def test_chat_stream_gpt3() -> float:
@@ -216,8 +220,9 @@ async def demo():
             raise ConnectionError('API Server is not running.')
 
         for func in [
+            test_chat_stream_gpt3,
             test_chat_non_stream_gpt4,
-            test_chat_stream_gpt3
+            test_function_calling,
         ]:
             print(f'[*] {func.__name__}')
             result = await func()

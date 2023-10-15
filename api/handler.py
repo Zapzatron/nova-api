@@ -25,7 +25,7 @@ models = [model['id'] for model in models_list['data']]
 with open(os.path.join('config', 'config.yml'), encoding='utf8') as f:
     config = yaml.safe_load(f)
 
-moderation_debug_key_key = os.getenv('MODERATION_DEBUG_KEY')
+moderation_debug_key = os.getenv('MODERATION_DEBUG_KEY')
 
 async def handle(incoming_request: fastapi.Request):
     """Transfer a streaming response 
@@ -124,7 +124,7 @@ async def handle(incoming_request: fastapi.Request):
 
     policy_violation = False
 
-    if not (moderation_debug_key_key and moderation_debug_key_key in key_tags and 'gpt-3' in payload.get('model', '')):
+    if not (moderation_debug_key and moderation_debug_key in key_tags and 'gpt-3' in payload.get('model', '')):
         if '/moderations' not in path:
             inp = ''
 

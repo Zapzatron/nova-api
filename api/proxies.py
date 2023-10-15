@@ -122,7 +122,7 @@ def get_proxy() -> Proxy:
 
     return Proxy(
         proxy_type=os.getenv('PROXY_TYPE', 'http'),
-        host_or_ip=os.getenv('PROXY_HOST', '127.0.0.1'),
+        host_or_ip=os.environ['PROXY_HOST'],
         port=int(os.getenv('PROXY_PORT', '8080')),
         username=os.getenv('PROXY_USER'),
         password=os.getenv('PROXY_PASS')

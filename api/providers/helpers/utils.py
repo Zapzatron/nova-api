@@ -31,7 +31,8 @@ async def random_secret_for(name: str) -> str:
 async def azure_chat_completion(endpoint: str, provider: str, payload: dict) -> dict:
     key = await random_secret_for(provider)
     model = payload['model']
-    deployment = model.replace('.', '').replace('-azure', '')
+    del payload['model']
+    deployment = model.replace('.', '')
 
     return {
         'method': 'POST',

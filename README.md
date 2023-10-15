@@ -65,24 +65,31 @@ This one's code can be found in the following repository: [github.com/novaoss/no
 
 # Setup
 ## Requirements
-- Python 3.9+
-- pip
-- MongoDB database
-- `uvicorn`
+- newest **Python** version
+- newest Python **pip** version
+- **MongoDB** database
+- `uvicorn` in your system package manager
 
 ## Recommended
 - Setup of the other infrastructure
 - `git` (for updates)
 - `screen` (for production)
 - Cloudflare (for security, anti-DDoS, etc.) - we fully support Cloudflare
+- proxies, in case you need to protect your privacy from authorities (China, Iran, ...)
 
 ## Staging System
 This repository has an integrated staging system. It's a simple system that allows you to test the API server before deploying it to production.
 
 You should definitely set up two databases on MongoDB: `nova-core` and `nova-test`. Please note that `nova-core` is always used for `providerkeys`.
 
-Put your production `.env` file in `env/.prod.env`. Your test `.env` file should be in `.env`.
+Put your production env in `env/.prod.env` and modify the values from the test `.env` to your liking:
+- Set `MONGO_NAME` to `nova-core`, which is your database name for the production mode.
+- Set `CHECKS_ENDPOINT` to `http://localhost:2333` (or the production port you set for `nova-api`)
 
+**Warning -** always make sure to update your production `.env` (`env/.prod.env`), too!
+
+
+Your test `.env` file should be placed in here.
 Running `PUSH_TO_PRODUCTION.sh` will:
 - kill port `2333` (production)
 - remove all contents of the production directory, set to `/home/nova-prod/` (feel free to change it)
@@ -129,6 +136,8 @@ Create a `.env` file, make sure not to reveal any of its contents to anyone, and
 
 ### Database
 Set up a MongoDB database and set `MONGO_URI` to the MongoDB database connection URI. Quotation marks are definetly recommended here!
+
+Then set `MONGO_NAME` to `nova-test`, which is your database name for the tests.
 
 ### Proxy (optional)
 - `PROXY_TYPE` (optional, defaults to `socks.PROXY_TYPE_HTTP`): the type of proxy - can be `http`, `https`, `socks4`, `socks5`, `4` or `5`, etc... 
@@ -182,13 +191,17 @@ You can also just add the *beginning* of an API address, like `12.123.` (without
 
 ### Core Keys
 `CORE_API_KEY` specifies the **very secret key** for  which need to access the entire user database etc.
+
+### Checks
 `NOVA_KEY` is the API key the which is used in tests. It should be one with tons of credits.
+`CHECKS_ENDPOINT` is the endpoint 
 
 ### Webhooks
 `DISCORD_WEBHOOK__USER_CREATED` is the Discord webhook URL for when a user is created.
 `DISCORD_WEBHOOK__API_ISSUE` is the Discord webhook URL for when an API issue occurs.
 
 ### Other
+`MODERATION_DEBUG_KEY` can be almost any string (avoid spaces or special characters) - users can add `#` + this key to their API key (e.g. `Bearer nv-123#modkey` as the `Authorization` header) to bypass the moderation checks. This is especially useful if the moderation is too sensitive and can be disabled for certain trusted users.
 `KEYGEN_INFIX` can be almost any string (avoid spaces or special characters) - this string will be put in the middle of every NovaAI API key which is generated. This is useful for identifying the source of the key using e.g. RegEx.
 
 ## Misc
