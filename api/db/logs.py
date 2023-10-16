@@ -19,7 +19,7 @@ conn = AsyncIOMotorClient(os.environ['MONGO_URI'])
 async def _get_collection(collection_name: str):
     return conn[os.getenv('MONGO_NAME', 'nova-test')][collection_name]
 
-async def log_api_request(user: dict, incoming_request, target_url: str):
+async def log_api_request(user: dict, incoming_request, target_url: str, tokens: dict, provider: str) -> dict:
     """Logs the API Request into the database."""
 
     db = await _get_collection('logs')
@@ -32,20 +32,24 @@ async def log_api_request(user: dict, incoming_request, target_url: str):
             pass
 
     model = payload.get('model')
-    ip_address = await network.get_ip(incoming_request)
+    ip_address = network.get_ip(incoming_request)
+
+    path = incoming_request.url.path
+    if path == '/v1/chat/completions':
+        path = 'c'
 
     new_log_item = {
         'timestamp': time.time(),
-        'method': incoming_request.method,
-        'path': incoming_request.url.path,
+        'path': path,
         'user_id': str(user['_id']),
         'security': {
             'ip': ip_address,
         },
         'details': {
             'model': model,
-            'target_url': target_url
-        }
+            'provider': provider,
+        },
+        'tokens': tokens,
     }
 
     inserted = await db.insert_one(new_log_item)

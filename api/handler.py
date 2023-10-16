@@ -22,9 +22,6 @@ with open(os.path.join('cache', 'models.json'), encoding='utf8') as f:
     models_list = json.load(f)
 models = [model['id'] for model in models_list['data']]
 
-with open(os.path.join('config', 'config.yml'), encoding='utf8') as f:
-    config = yaml.safe_load(f)
-
 moderation_debug_key = os.getenv('MODERATION_DEBUG_KEY')
 
 async def handle(incoming_request: fastapi.Request):
@@ -36,10 +33,10 @@ async def handle(incoming_request: fastapi.Request):
     path = incoming_request.url.path
     path = path.replace('/v1/v1', '/v1')
 
-    ip_address = await network.get_ip(incoming_request)
+    ip_address = network.get_ip(incoming_request)
 
     if '/dashboard' in path:
-        return errors.error(404, 'You can\'t access /dashboard.', 'This is a private endpoint.')
+        return await errors.error(404, 'You can\'t access /dashboard.', 'This is a private endpoint.')
 
     if path.startswith('/v1/models'):
         return fastapi.responses.JSONResponse(content=models_list)
@@ -79,25 +76,7 @@ async def handle(incoming_request: fastapi.Request):
     if 'account/credits' in path:
         return fastapi.responses.JSONResponse({'credits': user['credits']})
 
-    costs = config['costs']
-    cost = costs['other']
-
-    if 'chat/completions' in path:
-        cost = costs['chat-models'].get(payload.get('model'), cost)
-
-    role = user.get('role', 'default')
-
-    if 'enterprise' in role:
-        role_cost_multiplier = 0.1
-    else:
-        try:
-            role_cost_multiplier = config['roles'][role]['bonus']
-        except KeyError:
-            role_cost_multiplier = 1
-
-    cost = round(cost * role_cost_multiplier)
-
-    if user['credits'] < cost:
+    if user['credits'] < 1:
         return await errors.error(429, 'Not enough credits.', 'Wait or earn more credits. Learn more on our website or Discord server.')
 
     if 'DISABLE_VARS' not in key_tags:
@@ -168,8 +147,6 @@ async def handle(incoming_request: fastapi.Request):
             user=user,
             path=path,
             payload=payload,
-            credits_cost=cost,
-            input_tokens=0,
             incoming_request=incoming_request,
         ),
         media_type=media_type

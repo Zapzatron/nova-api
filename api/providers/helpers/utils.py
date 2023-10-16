@@ -3,6 +3,8 @@ try:
 except ModuleNotFoundError:
     from ...db import providerkeys
 
+# Sort the models by their value/cost/rarity.
+
 GPT_3 = [
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-16k',

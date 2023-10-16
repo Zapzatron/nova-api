@@ -65,6 +65,7 @@ This one's code can be found in the following repository: [github.com/novaoss/no
 
 # Setup
 ## Requirements
+- **Rust** (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
 - newest **Python** version
 - newest Python **pip** version
 - **MongoDB** database

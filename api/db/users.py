@@ -17,7 +17,16 @@ load_dotenv()
 with open(os.path.join(helpers.root, 'api', 'config', 'config.yml'), encoding='utf8') as f:
     credits_config = yaml.safe_load(f)
 
-## MONGODB Setup
+infix = os.getenv('KEYGEN_INFIX', 'S3LFH0ST')
+
+async def generate_api_key():
+    chars = string.ascii_letters + string.digits
+
+    suffix = ''.join(random.choices(chars, k=20))
+    prefix = ''.join(random.choices(chars, k=20))
+
+    new_api_key = f'nv2-{prefix}{infix}{suffix}'
+    return new_api_key
 
 class UserManager:
     """
@@ -31,19 +40,13 @@ class UserManager:
         return self.conn[os.getenv('MONGO_NAME', 'nova-test')][collection_name]
     
     async def get_all_users(self):
-        collection = self.conn[os.getenv('MONGO_NAME', 'nova-test')]['users']
+        collection = self.conn['nova-core']['users']
         return collection#.find()
 
     async def create(self, discord_id: str = '') -> dict:
         db = await self._get_collection('users')
-        chars = string.ascii_letters + string.digits
 
-        infix = os.getenv('KEYGEN_INFIX', 'S3LFH0ST')
-        suffix = ''.join(random.choices(chars, k=20))
-        prefix = ''.join(random.choices(chars, k=20))
-
-        new_api_key = f'nv2-{prefix}{infix}{suffix}'
-
+        new_api_key = await generate_api_key()
         existing_user = await self.user_by_discord_id(discord_id)
         if existing_user: # just change api key
             await db.update_one({'auth.discord': str(int(discord_id))}, {'$set': {'api_key': new_api_key}})
@@ -73,7 +76,18 @@ class UserManager:
 
     async def user_by_discord_id(self, discord_id: str):
         db = await self._get_collection('users')
-        return await db.find_one({'auth.discord': str(int(discord_id))})
+
+        user = await db.find_one({'auth.discord': str(discord_id)})
+
+        if not user:
+            return
+
+        if user['api_key'] == '':
+            new_api_key = await generate_api_key()
+            await db.update_one({'auth.discord': str(discord_id)}, {'$set': {'api_key': new_api_key}})
+            user = await db.find_one({'auth.discord': str(discord_id)})
+
+        return user
 
     async def user_by_api_key(self, key: str):
         db = await self._get_collection('users')
@@ -85,6 +99,7 @@ class UserManager:
 
     async def update_by_discord_id(self, discord_id: str, update):
         db = await self._get_collection('users')
+
         return await db.update_one({'auth.discord': str(int(discord_id))}, update)
 
     async def update_by_filter(self, obj_filter, update):
@@ -98,7 +113,7 @@ class UserManager:
 manager = UserManager()
 
 async def demo():
-    user = await UserManager().create(69420)
+    user = await UserManager().create('1099385227077488700')
     print(user)
 
 if __name__ == '__main__':

@@ -5,9 +5,9 @@ costs:
   other: 5 # Other endpoints
 
   chat-models: # chat completions
-    gpt-4-32k: 200
-    gpt-4: 50
-    gpt-3: 10
+    gpt-4-32k: 100
+    gpt-4: 20
+    gpt-3: 5
 
 ## Roles Explanation
 
@@ -17,11 +17,11 @@ costs:
 roles:
   owner:
     bonus: 0
-  admin:
+  enterprise:
     bonus: 0.2
-  helper:
+  admin:
     bonus: 0.4
-  booster:
+  helper:
     bonus: 0.6
   default:
     bonus: 1.0

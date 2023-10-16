@@ -17,6 +17,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 import core
 import handler
 
+from helpers.network import get_ratelimit_key
+
 load_dotenv()
 
 app = fastapi.FastAPI()
@@ -33,7 +35,7 @@ app.include_router(core.router)
 
 limiter = Limiter(
     swallow_errors=True,
-    key_func=get_remote_address,
+    key_func=get_ratelimit_key,
     default_limits=[
     '2/second',
     '30/minute',

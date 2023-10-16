@@ -2,6 +2,7 @@
 
 import os
 import json
+import yaml
 import ujson
 import aiohttp
 import asyncio
@@ -17,15 +18,16 @@ import load_balancing
 
 from helpers import errors
 from db import providerkeys
+from helpers.tokens import count_tokens_for_messages
 
 load_dotenv()
 
 CRITICAL_API_ERRORS = ['invalid_api_key', 'account_deactivated']
-
 keymanager = providerkeys.manager
-
 background_tasks: Set[asyncio.Task[Any]] = set()
 
+with open(os.path.join('config', 'config.yml'), encoding='utf8') as f:
+    config = yaml.safe_load(f)
 
 def create_background_task(coro: Coroutine[Any, Any, Any]) -> None:
     """asyncio.create_task, which prevents the task from being garbage collected.
@@ -36,13 +38,10 @@ def create_background_task(coro: Coroutine[Any, Any, Any]) -> None:
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
 
-
 async def respond(
     path: str='/v1/chat/completions',
     user: dict=None,
     payload: dict=None,
-    credits_cost: int=0,
-    input_tokens: int=0,
     incoming_request: starlette.requests.Request=None,
 ):
     """
@@ -71,6 +70,9 @@ async def respond(
         'critical_provider_error': 0,
         'timeout': 0
     }
+
+    input_tokens = 0
+    output_tokens = 0
 
     for _ in range(10):
         try:
@@ -161,9 +163,15 @@ async def respond(
                             continue
 
                         if response.ok:
+                            if is_chat and not is_stream:
+                                input_tokens = client_json_response['usage']['prompt_tokens']
+                                output_tokens = client_json_response['usage']['completion_tokens']
+
                             server_json_response = client_json_response
 
                     if is_stream:
+                        input_tokens = await count_tokens_for_messages(payload['messages'], model=model)
+
                         chunk_no = 0
                         buffer = ''
 
@@ -175,7 +183,7 @@ async def respond(
                             if 'azure' in provider_name:
                                 chunk = chunk.replace('data: ', '', 1)
 
-                                if not chunk or chunk_no == 1:
+                                if not chunk.strip() or chunk_no == 1:
                                     continue
 
                             subchunks = chunk.split('\n\n')
@@ -188,6 +196,8 @@ async def respond(
                                 yield subchunk + '\n\n'
 
                             buffer = subchunks[-1]
+
+                        output_tokens = chunk_no
                     break
 
             except aiohttp.client_exceptions.ServerTimeoutError:
@@ -198,7 +208,7 @@ async def respond(
         skipped_errors = {k: v for k, v in skipped_errors.items() if v > 0}
         skipped_errors = ujson.dumps(skipped_errors, indent=4)
         yield await errors.yield_error(500,
-            'Sorry, our API seems to have issues connecting to our provider(s).',
+            f'Sorry, our API seems to have issues connecting to "{model}".',
             f'Please send this info to support: {skipped_errors}'
         )
         return
@@ -206,13 +216,48 @@ async def respond(
     if (not is_stream) and server_json_response:
         yield json.dumps(server_json_response)
 
+
+    role = user.get('role', 'default')
+
+    model_multipliers = config['costs']
+    model_multiplier = model_multipliers['other']
+
+    if is_chat:
+        model_multiplier = model_multipliers['chat-models'].get(payload.get('model'), model_multiplier)
+        total_tokens = input_tokens + output_tokens
+        credits_cost = total_tokens / 10
+        credits_cost = round(credits_cost * model_multiplier)
+
+        tokens = {
+            'input': input_tokens,
+            'output': output_tokens,
+            'total': total_tokens
+        }
+    else:
+        credits_cost = 5
+        tokens = {
+            'input': 0,
+            'output': 0,
+            'total': credits_cost
+        }
+
+    try:
+        role_cost_multiplier = config['roles'][role]['bonus']
+    except KeyError:
+        role_cost_multiplier = 1
+
+    credits_cost = round(credits_cost * role_cost_multiplier)
+
+    print(f'[bold]Credits cost[/bold]: {credits_cost}')
+
     create_background_task(
         after_request.after_request(
+            provider=provider_name,
             incoming_request=incoming_request,
             target_request=target_request,
             user=user,
             credits_cost=credits_cost,
-            input_tokens=input_tokens,
+            tokens=tokens,
             path=path,
             is_chat=is_chat,
             model=model,

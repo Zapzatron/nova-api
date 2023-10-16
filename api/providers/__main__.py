@@ -22,7 +22,10 @@ async def main():
 
         for file_name in os.listdir(os.path.dirname(__file__)):
             if file_name.endswith('.py') and not file_name.startswith('_'):
-                print(file_name.split('.')[0])
+                name = file_name.split('.')[0]
+                models = importlib.import_module(f'.{file_name.split(".")[0]}', 'providers').MODELS
+                
+                print(f'  {name} @ {", ".join(models)}')
 
         sys.exit(0)
 
