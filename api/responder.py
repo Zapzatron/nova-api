@@ -65,6 +65,7 @@ async def respond(
     }
 
     skipped_errors = {
+        'no_provider_key': 0,
         'insufficient_quota': 0,
         'billing_not_active': 0,
         'critical_provider_error': 0,
@@ -95,12 +96,8 @@ async def respond(
             provider_key = provider_auth.split('>')[1]
 
         if provider_key == '--NO_KEY--':
-            print(f'No key for {provider_name}')
-            yield await errors.yield_error(500,
-                'Sorry, our API seems to have issues connecting to our provider(s).',
-                'This most likely isn\'t your fault. Please try again later.'
-            )
-            return
+            skipped_errors['no_provider_key'] += 1
+            continue
 
         target_request['headers'].update(target_request.get('headers', {}))
 

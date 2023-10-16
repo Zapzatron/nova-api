@@ -329,7 +329,15 @@ It is recommended to use the default ports, because this will make it easier to 
 
 Make sure you have read all the according sections and have set up everything correctly.
 
+## Autorewards
+
+```bash
+0 0 * * * cd /home/nova-api && python rewards
+crontab -e
+```
+
 ## Donations
+
 When someone donates, manually update the credits and role to "helper" in the database.
 For enterprise donations with more lax rate-limits, set the role to "enterprise".
 Make sure to also include the donation in the `donations` database!
