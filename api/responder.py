@@ -225,8 +225,11 @@ async def respond(
     if is_chat:
         model_multiplier = model_multipliers['chat-models'].get(payload.get('model'), model_multiplier)
         total_tokens = input_tokens + output_tokens
-        credits_cost = total_tokens / 10
+        credits_cost = total_tokens / 60
         credits_cost = round(credits_cost * model_multiplier)
+
+        if credits_cost < 1:
+            credits_cost = 1
 
         tokens = {
             'input': input_tokens,
