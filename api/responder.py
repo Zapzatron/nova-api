@@ -168,6 +168,13 @@ async def respond(
                                 output_tokens = client_json_response['usage']['completion_tokens']
 
                             server_json_response = client_json_response
+                        else:
+                            rbody = (await response.read()).decode("utf-8")
+                            if 'text/plain' in response.headers.get('Content-Type', ''):
+                                data = rbody
+                            else:
+                                data = json.loads(rbody)
+                            yield await errors.yield_error(response.status, data, 'Please report this error to the support team.')
 
                     if is_stream:
                         input_tokens = await count_tokens_for_messages(payload['messages'], model=model)
