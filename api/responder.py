@@ -211,8 +211,8 @@ async def respond(
                 continue
 
     else:
-        skipped_errors = {k: v for k, v in skipped_errors.items() if ((isinstance(v, list) and len(v) > 0) or
-                                                                      (isinstance(v, int) and v > 0))}
+        skipped_errors = {k: v for k, v in skipped_errors.items() if ((isinstance(v, int) and v > 0) or
+                                                                      (isinstance(v, list) and len(v) > 0))}
         skipped_errors = ujson.dumps(skipped_errors, indent=4)
         yield await errors.yield_error(500,
             f'Sorry, our API seems to have issues connecting to "{model}".',
