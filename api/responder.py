@@ -68,7 +68,8 @@ async def respond(
         'insufficient_quota': 0,
         'billing_not_active': 0,
         'critical_provider_error': 0,
-        'timeout': 0
+        'timeout': 0,
+        'other_errors': []
     }
 
     input_tokens = 0
@@ -168,13 +169,11 @@ async def respond(
                                 output_tokens = client_json_response['usage']['completion_tokens']
 
                             server_json_response = client_json_response
-                        else:
-                            rbody = (await response.read()).decode("utf-8")
-                            if 'text/plain' in response.headers.get('Content-Type', ''):
-                                data = rbody
-                            else:
-                                data = json.loads(rbody)
-                            yield await errors.yield_error(response.status, data, 'Please report this error to the support team.')
+                    elif response.content_type == 'text/plain':
+                        data = (await response.read()).decode("utf-8")
+                        print(f'[!] {data}')
+                        skipped_errors['other_errors'] = skipped_errors['other_errors'].append(data)
+                        continue
 
                     if is_stream:
                         input_tokens = await count_tokens_for_messages(payload['messages'], model=model)
@@ -182,7 +181,7 @@ async def respond(
                         chunk_no = 0
                         buffer = ''
 
-                        async for chunk  in response.content.iter_chunked(1024):
+                        async for chunk in response.content.iter_chunked(1024):
                             chunk_no += 1
 
                             chunk = chunk.decode('utf8')
@@ -212,7 +211,7 @@ async def respond(
                 continue
 
     else:
-        skipped_errors = {k: v for k, v in skipped_errors.items() if v > 0}
+        skipped_errors = {k: v for k, v in skipped_errors.items() if ((isinstance(v, list) and len(v) > 0) or v > 0)}
         skipped_errors = ujson.dumps(skipped_errors, indent=4)
         yield await errors.yield_error(500,
             f'Sorry, our API seems to have issues connecting to "{model}".',
@@ -222,7 +221,6 @@ async def respond(
 
     if (not is_stream) and server_json_response:
         yield json.dumps(server_json_response)
-
 
     role = user.get('role', 'default')
 
